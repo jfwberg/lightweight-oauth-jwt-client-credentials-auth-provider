@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Additional_Token_Endpoint_Headers__c</fullName>
+    <externalId>false</externalId>
+    <fieldManageability>DeveloperControlled</fieldManageability>
+    <inlineHelpText>Addtional headers to add to the token endpoint. Each header should go on its own line and be separated with a colon. I.E. &quot;apiKey : value&quot;</inlineHelpText>
+    <label>Additional Token Endpoint Headers</label>
+    <length>32768</length>
+    <type>LongTextArea</type>
+    <visibleLines>3</visibleLines>
+</CustomField>

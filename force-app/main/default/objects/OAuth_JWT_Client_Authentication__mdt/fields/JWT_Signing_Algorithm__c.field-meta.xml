@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>JWT_Signing_Algorithm__c</fullName>
+    <defaultValue>&apos;RSA-SHA256&apos;</defaultValue>
+    <externalId>false</externalId>
+    <fieldManageability>DeveloperControlled</fieldManageability>
+    <inlineHelpText>The signing algorithm used by the Crypto class to sign the JWT. Defaults to &apos;RSA-SHA256&apos;. This should match the algorithm of the JWT. The value names are just different, hence 2 fields.</inlineHelpText>
+    <label>JWT Signing Algorithm</label>
+    <length>255</length>
+    <required>true</required>
+    <type>Text</type>
+    <unique>false</unique>
+</CustomField>

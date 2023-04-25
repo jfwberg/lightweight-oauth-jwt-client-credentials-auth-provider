@@ -13,35 +13,35 @@ public with sharing class OAuthJwtClientAuthentication extends Auth.AuthProvider
 	 **                                PRIVATE CONSTANTS                                 **
 	 ** ******************************************************************************** **/
 	// Grant details
-	private final String GRANT_TYPE_FIELD_NAME		= String.valueOf(OAuth_JWT_Client_Authentication__mdt.Grant_Type__c);
-	private final String TOKEN_ENDPOINT_FIELD_NAME 	= String.valueOf(OAuth_JWT_Client_Authentication__mdt.Token_Endpoint_URL__c);
-	private final String TOKEN_HEADERS_FIELD_NAME 	= String.valueOf(OAuth_JWT_Client_Authentication__mdt.Additional_Token_Endpoint_Headers__c);
+	@TestVisible private final String GRANT_TYPE_FIELD_NAME		= String.valueOf(OAuth_JWT_Client_Authentication__mdt.Grant_Type__c);
+	@TestVisible private final String TOKEN_ENDPOINT_FIELD_NAME = String.valueOf(OAuth_JWT_Client_Authentication__mdt.Token_Endpoint_URL__c);
+	@TestVisible private final String TOKEN_HEADERS_FIELD_NAME 	= String.valueOf(OAuth_JWT_Client_Authentication__mdt.Additional_Token_Endpoint_Headers__c);
 	
 	// JWT Header info
-	private final String JWT_ALGORITHM_FIELD_NAME	= String.valueOf(OAuth_JWT_Client_Authentication__mdt.JWT_Algorithm__c);
-	private final String JWT_TYPE_FIELD_NAME		= String.valueOf(OAuth_JWT_Client_Authentication__mdt.JWT_Type__c);
-	private final String JWT_KID_FIELD_NAME			= String.valueOf(OAuth_JWT_Client_Authentication__mdt.JWT_Kid__c);
+	@TestVisible private final String JWT_ALGORITHM_FIELD_NAME	= String.valueOf(OAuth_JWT_Client_Authentication__mdt.JWT_Algorithm__c);
+	@TestVisible private final String JWT_TYPE_FIELD_NAME		= String.valueOf(OAuth_JWT_Client_Authentication__mdt.JWT_Type__c);
+	@TestVisible private final String JWT_KID_FIELD_NAME		= String.valueOf(OAuth_JWT_Client_Authentication__mdt.JWT_Kid__c);
 
 	// JWT Settings
-	private final String JWT_SUBJECT_FIELD_NAME		= String.valueOf(OAuth_JWT_Client_Authentication__mdt.JWT_Subject__c);
-	private final String JWT_ISSUER_FIELD_NAME		= String.valueOf(OAuth_JWT_Client_Authentication__mdt.JWT_Issuer__c);
-	private final String JWT_AUDIENCE_FIELD_NAME	= String.valueOf(OAuth_JWT_Client_Authentication__mdt.JWT_Audience__c);
+	@TestVisible private final String JWT_SUBJECT_FIELD_NAME	= String.valueOf(OAuth_JWT_Client_Authentication__mdt.JWT_Subject__c);
+	@TestVisible private final String JWT_ISSUER_FIELD_NAME		= String.valueOf(OAuth_JWT_Client_Authentication__mdt.JWT_Issuer__c);
+	@TestVisible private final String JWT_AUDIENCE_FIELD_NAME	= String.valueOf(OAuth_JWT_Client_Authentication__mdt.JWT_Audience__c);
 	
 	// Specify the name for your auth provider for the callback URL
-	private final String AUTH_PROVIDER_NAME_FIELD_NAME		= String.valueOf(OAuth_JWT_Client_Authentication__mdt.Auth_Provider_Name__c);
+	@TestVisible private final String AUTH_PROVIDER_NAME_FIELD_NAME		= String.valueOf(OAuth_JWT_Client_Authentication__mdt.Auth_Provider_Name__c);
 
 	// The API name of the certificate and the algorithm used for signing the JWT
-	private final String JWS_SIGNING_CERT_FIELD_NAME		= String.valueOf(OAuth_JWT_Client_Authentication__mdt.JWT_Signing_Certificate_Name__c);
-	private final String JWS_SIGNING_ALGORITHM_FIELD_NAME	= String.valueOf(OAuth_JWT_Client_Authentication__mdt.JWT_Signing_Algorithm__c);
+	@TestVisible private final String JWS_SIGNING_CERT_FIELD_NAME		= String.valueOf(OAuth_JWT_Client_Authentication__mdt.JWT_Signing_Certificate_Name__c);
+	@TestVisible private final String JWS_SIGNING_ALGORITHM_FIELD_NAME	= String.valueOf(OAuth_JWT_Client_Authentication__mdt.JWT_Signing_Algorithm__c);
 
 	// Valid algorithm for JKS Header and JWT Signing Certificate for validating the user inputs based on availible SFDC functionality
-	private final Set<String> VALID_JWS_HEADER_ALGORITHMS	= new Set<String>{'RS256','RS384','RS512','ES256','ES384','ES512'};
-	private final Set<String> VALID_JWS_SIGNING_ALGORITHMS	= new Set<String>{'RSA-SHA256','RSA-SHA384','RSA-SHA512','ECDSA-SHA256','ECDSA-SHA384','ECDSA-SHA512'};
+	@TestVisible private final Set<String> VALID_JWS_HEADER_ALGORITHMS	= new Set<String>{'RS256','RS384','RS512','ES256','ES384','ES512'};
+	@TestVisible private final Set<String> VALID_JWS_SIGNING_ALGORITHMS	= new Set<String>{'RSA-SHA256','RSA-SHA384','RSA-SHA512','ECDSA-SHA256','ECDSA-SHA384','ECDSA-SHA512'};
 	
 	// Any messages go here
-	private final String INVALID_TOKEN_RESPONSE_MSG			= 'Unexpected response when calling the token endpoint: {0}';
-	private final String JWS_INVALID_HEAD_ALG_EXCEPTION_MSG	= 'Invalid JWS Header Algorithm provided. Valid values are: \'RS256\',\'RS384\',\'RS512\',\'ES256\',\'ES384\' and \'ES512\'';
-	private final String JWS_INVALID_SIGN_ALG_EXCEPTION_MSG	= 'Invalid JWS Signing Algorithm provided. Valid values are: \'RSA-SHA256\',\'RSA-SHA384\',\'RSA-SHA512\',\'ECDSA-SHA256\',\'ECDSA-SHA384\',\'ECDSA-SHA512\'';
+	@TestVisible private final String INVALID_TOKEN_RESPONSE_MSG			= 'Unexpected response when calling the token endpoint: {0}';
+	@TestVisible private final String JWS_INVALID_HEAD_ALG_EXCEPTION_MSG	= 'Invalid JWS Header Algorithm provided. Valid values are: \'RS256\',\'RS384\',\'RS512\',\'ES256\',\'ES384\' and \'ES512\'';
+	@TestVisible private final String JWS_INVALID_SIGN_ALG_EXCEPTION_MSG	= 'Invalid JWS Signing Algorithm provided. Valid values are: \'RSA-SHA256\',\'RSA-SHA384\',\'RSA-SHA512\',\'ECDSA-SHA256\',\'ECDSA-SHA384\',\'ECDSA-SHA512\'';
 	
 	
 
@@ -63,12 +63,18 @@ public with sharing class OAuthJwtClientAuthentication extends Auth.AuthProvider
 	public PageReference initiate(Map<String,String> authProviderConfiguration, String stateToPropagate){ 
 
 		// Get the standard auth provider endpoint url
-		PageReference pr = this.getSfdcCallbackURL(authProviderConfiguration);
-        
-		// Add the state parameter and a code parameter as both seems to be required
-		pr.getParameters().put('state', stateToPropagate);
-        pr.getParameters().put('code', 'NoCodeRequiredButMandatory');
-        return pr;
+		PageReference pageReference = this.getSfdcCallbackURL(authProviderConfiguration);
+		
+		// Add the state parameter
+		pageReference.getParameters().put('state', stateToPropagate);
+
+		// Some (older) implementations require to receive the code parameter
+		// I have not found any issues by removing the parameter, but some user do,
+		// so a value is provided just to be on the safe side
+		pageReference.getParameters().put('code', 'NoCodeRequiredButMandatory');
+
+		// Return the pageReference
+		return pageReference;
 	}
 
 
@@ -121,7 +127,7 @@ public with sharing class OAuthJwtClientAuthentication extends Auth.AuthProvider
 			response.access_token,
 			response.token_type
 		);
-    }
+	}
 
 
 	/**
@@ -145,7 +151,7 @@ public with sharing class OAuthJwtClientAuthentication extends Auth.AuthProvider
 			'Integration',		// First Name
 			'User',				// Last Name
 			'Integration User',	// Full Name
-			'a@b.com.invalid',	// Email
+			'integration.user@example.com.invalid',	// Email Address
 			'link',				// Link
 			null,				// Username
 			null, 				// Locale
@@ -179,10 +185,11 @@ public with sharing class OAuthJwtClientAuthentication extends Auth.AuthProvider
 	 * @false-positives The URL is generated at a known source and no danger. It's not user updateable.
 	 *                  Also the remote site settings will prevent any unauthorised endpoint call-outs
 	 */
-		@SuppressWarnings('PMD.ApexOpenRedirect')
+	@SuppressWarnings('PMD.ApexOpenRedirect')
 	private PageReference getSfdcCallbackURL(Map<String,String> authProviderConfiguration){
-		String sfdcCallbackUrl = URL.getSalesforceBaseUrl().toExternalForm() + '/services/authcallback/' + authProviderConfiguration.get(this.AUTH_PROVIDER_NAME_FIELD_NAME)?.trim();
-		return new PageReference(sfdcCallbackUrl);
+		return new PageReference(
+			URL.getSalesforceBaseUrl().toExternalForm() + '/services/authcallback/' + authProviderConfiguration.get(this.AUTH_PROVIDER_NAME_FIELD_NAME)?.trim()
+		);
 	}
 
 
@@ -218,20 +225,20 @@ public with sharing class OAuthJwtClientAuthentication extends Auth.AuthProvider
 		);
 		
 		// Create the request to the token endpoint
-		HttpRequest req = new HttpRequest(); 
-		req.setEndpoint(authProviderConfiguration.get(this.TOKEN_ENDPOINT_FIELD_NAME)?.trim()); 
-		req.setHeader('Content-Type','application/x-www-form-urlencoded'); 
-		req.setMethod('POST'); 
-		req.setBody(body);
+		HttpRequest httpRequest = new HttpRequest(); 
+		httpRequest.setEndpoint(authProviderConfiguration.get(this.TOKEN_ENDPOINT_FIELD_NAME)?.trim()); 
+		httpRequest.setHeader('Content-Type','application/x-www-form-urlencoded'); 
+		httpRequest.setMethod('POST'); 
+		httpRequest.setBody(body);
 		
 		// Add optional custom headers to the token request (i.e. things like API keys,  X-Correlation-Id etc.)
 		this.addStringHeadersToRequest(
 			authProviderConfiguration.get(this.TOKEN_HEADERS_FIELD_NAME)?.trim(),
-			req
+			httpRequest
 		);
 		
 		// fetch the response
-		HTTPResponse res = new Http().send(req); 
+		HTTPResponse res = new Http().send(httpRequest); 
 
 		// Check the status is as expexted or throw an exception
 		if(res.getStatusCode() != 200){
@@ -280,13 +287,13 @@ public with sharing class OAuthJwtClientAuthentication extends Auth.AuthProvider
 		);
 
 		// Generate the signature
-		String b64UrlEncodedSignature = this.base64UrlEncode(
+		String b64UrlEncodedSignature = (!Test.isRunningTest()) ? this.base64UrlEncode(
 			Crypto.signWithCertificate(
 				this.validateJwsSigningAlgorithm(authProviderConfiguration.get(this.JWS_SIGNING_ALGORITHM_FIELD_NAME)?.trim()),
 				Blob.valueOf(b64UrlEncodedHeaderAndPayload),
 				authProviderConfiguration.get(this.JWS_SIGNING_CERT_FIELD_NAME)?.trim()
 			)
-		);
+		) : '[TEST_CLASS_VALUE_BECAUSE_THERE_IS_NO_MOCK_CERT_OPTION]';
 
 		// Create and return the JWT in a signed and compact serialization
 		return String.format('{0}.{1}', new String[]{
@@ -410,6 +417,7 @@ public with sharing class OAuthJwtClientAuthentication extends Auth.AuthProvider
 	 *                  conventions to accomodate this
 	 */
 	@SuppressWarnings('PMD.VariableNamingConventions')
+	@TestVisible
 	private class TokenResponse{
 		
 		// Required

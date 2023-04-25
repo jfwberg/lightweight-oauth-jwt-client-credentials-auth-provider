@@ -23,12 +23,12 @@ This is a single class with a single purpose, you either want to package it or k
 - Any confguration values are in a constant at the top following the common code structure
 - Always use the this keyword properly for readability
 - Always add ApexDoc headers even if it seems overkill, it's just good practice
+- Certificate related methods cannot be tested because Apex cannot mock certificates. The alternative is to supply a certificate name in the test class but I'd like to keep the tests org agnostic
 	
 ## Todo: 
-- Write a Test Class
+- Improve the Test Class
 - Run security scan on the class
 - Run PMD / Graph and fix any issues
-- Put the params names in constants
-- Validate quiddity
 - Create a namespaced managed package
 - Add example data to package (named + external credential)
+- Extend header length to match text width

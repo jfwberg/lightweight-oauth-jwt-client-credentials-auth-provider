@@ -3,17 +3,17 @@
  * @date        April 2023
  * @copyright   (c) 2023 Justus van den Berg
  * @license     MIT (See LICENSE file in the project root)
- * @description Test class for the OAuthJwtClientAuthentication class methods
+ * @description Test class for the OAuthJwtClientCredentials class methods
  */
 @IsTest
-private with sharing class OAuthJwtClientAuthenticationTest {
+private with sharing class OAuthJwtClientCredentialsTest {
 	
 	/** **************************************************************************************************** **
 	 **                                      PRIVATE TEST DATA VARIABLE                                      **
 	 ** **************************************************************************************************** **/
 	// Variables for holding test data
-	private static OAuthJwtClientAuthentication authProvider;
-	private static Map<String,String> authProviderConfig;
+	private static OAuthJwtClientCredentials authProvider;
+	private static Map<String,String> authProviderConfig; 
 
 
 	/** **************************************************************************************************** **
@@ -111,9 +111,9 @@ private with sharing class OAuthJwtClientAuthenticationTest {
 	/**
 	 * Method to get a dummy auth provider
 	 */
-	private static OAuthJwtClientAuthentication getAuthProvider(){
+	private static OAuthJwtClientCredentials getAuthProvider(){
 		if(authProvider == null){
-			authProvider = new OAuthJwtClientAuthentication();
+			authProvider = new OAuthJwtClientCredentials();
 		}
 		return authProvider;
 	}
@@ -125,7 +125,7 @@ private with sharing class OAuthJwtClientAuthenticationTest {
 	private static Map<String,String> getAuthProviderConfig(){
 		if(authProviderConfig == null){
 			authProviderConfig=  new Map<String,String>{
-				getAuthProvider().GRANT_TYPE_FIELD_NAME				=> 'client_credentials',
+				getAuthProvider().SCOPE_FIELD_NAME					=> 'web,api',
 				getAuthProvider().TOKEN_ENDPOINT_FIELD_NAME			=> 'https://localhost/oauth/token',
 				getAuthProvider().TOKEN_HEADERS_FIELD_NAME			=> 'apiKey : [TEST_KEY]',
 				getAuthProvider().JWT_ALGORITHM_FIELD_NAME			=> 'RS512',
@@ -149,7 +149,7 @@ private with sharing class OAuthJwtClientAuthenticationTest {
 	private class MockTokenResponse implements HttpCalloutMock { 
 		public HttpResponse respond(HTTPRequest req) { 
 			
-			OAuthJwtClientAuthentication.TokenResponse tokenResponse = new OAuthJwtClientAuthentication.TokenResponse();
+			OAuthJwtClientCredentials.TokenResponse tokenResponse = new OAuthJwtClientCredentials.TokenResponse();
 			tokenResponse.access_token 	= 'access_token_value';
 			tokenResponse.token_type	= 'Bearer';
 			tokenResponse.expires_in	= '1682439225';

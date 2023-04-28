@@ -1,12 +1,24 @@
 {
   "packageDirectories": [
-    {
-      "path": "force-app",
-      "default": true
-    }
+	{
+		"path": "force-app",
+		"default": true,
+		"package": "OAuth 2.0 JWT Client Credentials Authentication Auth Provider",
+		"versionName": "0.1",
+		"versionNumber": "0.1.0.NEXT",
+		"versionDescription": "A generic Auth Provider Apex class that can be used with named/external credentials to get an access token using the OAuth 2.0 JWT Client Credentials Authentication Flow."
+	},
+	{
+		"path": "force-demo-data",
+		"default": false,
+		"package": "OAuth 2.0 JWT Client Credentials Authentication Auth Provider - Demo Data",
+		"versionName": "0.1",
+		"versionNumber": "0.1.0.NEXT",
+		"versionDescription": "This is a test data package to simply illustrate what the metadata would look like. API Keys and values are obfuscated here, but is should give a good idea."
+	  }
   ],
-  
-  "name": "OAuth 2.0 JWT Client Authentication Auth Provider",
+
+  "name": "oauth-jwt-client-credentials-authentication-auth-provider",
   "namespace": "",
   "sfdcLoginUrl": "https://login.salesforce.com",
   "sourceApiVersion": "57.0"

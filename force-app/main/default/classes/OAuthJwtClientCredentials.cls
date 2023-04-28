@@ -7,19 +7,19 @@
  *              Follows the standard as described in 
  *              https://datatracker.ietf.org/doc/html/rfc7523#section-2.2
  */
-public with sharing class OAuthJwtClientAuthentication extends Auth.AuthProviderPluginClass{
+public with sharing class OAuthJwtClientCredentials extends Auth.AuthProviderPluginClass{
 
 	/** ******************************************************************************** **
 	 **                                PRIVATE CONSTANTS                                 **
 	 ** ******************************************************************************** **/
 	// Grant details
-	@TestVisible private final String GRANT_TYPE_FIELD_NAME		= String.valueOf(OAuth_JWT_Client_Authentication__mdt.Grant_Type__c);
+	@TestVisible private final String SCOPE_FIELD_NAME			= String.valueOf(OAuth_JWT_Client_Authentication__mdt.Scope__c);
 	@TestVisible private final String TOKEN_ENDPOINT_FIELD_NAME = String.valueOf(OAuth_JWT_Client_Authentication__mdt.Token_Endpoint_URL__c);
 	@TestVisible private final String TOKEN_HEADERS_FIELD_NAME 	= String.valueOf(OAuth_JWT_Client_Authentication__mdt.Additional_Token_Endpoint_Headers__c);
-	
+	@TestVisible private final String CUSTOM_CALLBACK_FIELD_NAME= String.valueOf(OAuth_JWT_Client_Authentication__mdt.Custom_Callback_URL__c);
+
 	// JWT Header info
 	@TestVisible private final String JWT_ALGORITHM_FIELD_NAME	= String.valueOf(OAuth_JWT_Client_Authentication__mdt.JWT_Algorithm__c);
-	@TestVisible private final String JWT_TYPE_FIELD_NAME		= String.valueOf(OAuth_JWT_Client_Authentication__mdt.JWT_Type__c);
 	@TestVisible private final String JWT_KID_FIELD_NAME		= String.valueOf(OAuth_JWT_Client_Authentication__mdt.JWT_Kid__c);
 
 	// JWT Settings
@@ -33,6 +33,9 @@ public with sharing class OAuthJwtClientAuthentication extends Auth.AuthProvider
 	// The API name of the certificate and the algorithm used for signing the JWT
 	@TestVisible private final String JWS_SIGNING_CERT_FIELD_NAME		= String.valueOf(OAuth_JWT_Client_Authentication__mdt.JWT_Signing_Certificate_Name__c);
 	@TestVisible private final String JWS_SIGNING_ALGORITHM_FIELD_NAME	= String.valueOf(OAuth_JWT_Client_Authentication__mdt.JWT_Signing_Algorithm__c);
+
+	// Parameter names
+	@TestVisible private final String PARAM_NAME_STATE = 'state';
 
 	// Valid algorithm for JKS Header and JWT Signing Certificate for validating the user inputs based on availible SFDC functionality
 	@TestVisible private final Set<String> VALID_JWS_HEADER_ALGORITHMS	= new Set<String>{'RS256','RS384','RS512','ES256','ES384','ES512'};
@@ -66,12 +69,7 @@ public with sharing class OAuthJwtClientAuthentication extends Auth.AuthProvider
 		PageReference pageReference = this.getSfdcCallbackURL(authProviderConfiguration);
 		
 		// Add the state parameter
-		pageReference.getParameters().put('state', stateToPropagate);
-
-		// Some (older) implementations require to receive the code parameter
-		// I have not found any issues by removing the parameter, but some user do,
-		// so a value is provided just to be on the safe side
-		pageReference.getParameters().put('code', 'NoCodeRequiredButMandatory');
+		pageReference.getParameters().put(this.PARAM_NAME_STATE, stateToPropagate);
 
 		// Return the pageReference
 		return pageReference;
@@ -96,13 +94,12 @@ public with sharing class OAuthJwtClientAuthentication extends Auth.AuthProvider
 		// Retrieve a new token from the token endpoint
 		TokenResponse tokenResponse = this.retrieveToken(authProviderConfiguration);
 		
-		// Return the the token response
-		// There is no refresh token so we just set a random value
+		// Return the the token response, there is no refresh token so we just set a random value
 		return new Auth.AuthProviderTokenResponse(
 			authProviderConfiguration.get(this.AUTH_PROVIDER_NAME_FIELD_NAME)?.trim(),
 			tokenResponse.access_token,
 			'NoRefreshTokenInThisOAuthFlow',
-			callbackState.queryParameters.get('state')
+			callbackState.queryParameters.get(this.PARAM_NAME_STATE)
 		); 
 	}
 	
@@ -187,6 +184,13 @@ public with sharing class OAuthJwtClientAuthentication extends Auth.AuthProvider
 	 */
 	@SuppressWarnings('PMD.ApexOpenRedirect')
 	private PageReference getSfdcCallbackURL(Map<String,String> authProviderConfiguration){
+		
+		// If you have  custom callback URL specified, return the custom callback URL
+		if(String.isNotBlank(authProviderConfiguration.get(this.CUSTOM_CALLBACK_FIELD_NAME)?.trim())){
+			return new PageReference(authProviderConfiguration.get(this.CUSTOM_CALLBACK_FIELD_NAME)?.trim());
+		}
+		
+		// By default generate the Standard Salesforce Callback URL for the Auth Provider
 		return new PageReference(
 			URL.getSalesforceBaseUrl().toExternalForm() + '/services/authcallback/' + authProviderConfiguration.get(this.AUTH_PROVIDER_NAME_FIELD_NAME)?.trim()
 		);
@@ -214,16 +218,14 @@ public with sharing class OAuthJwtClientAuthentication extends Auth.AuthProvider
 	 */
 	private TokenResponse retrieveToken(Map<String,String> authProviderConfiguration){
 		
-		// Generate the full body string
-		String body =  String.format(
-			'grant_type={0}&client_assertion_type={1}&client_assertion={2}',
-			new String[]{
-				EncodingUtil.urlEncode(authProviderConfiguration.get(this.GRANT_TYPE_FIELD_NAME)?.trim(),	'UTF-8'),
-				EncodingUtil.urlEncode('urn:ietf:params:oauth:client-assertion-type:jwt-bearer', 'UTF-8'),
-				EncodingUtil.urlEncode(this.generateJWS(authProviderConfiguration), 'UTF-8')
-			}
-		);
-		
+		// Generate the full body string as a URL query parameter
+		String body =  this.urlParameterQueryString(new Map<String,String>{
+			'grant_type'			=> 'client_credentials',
+			'client_assertion_type'	=> 'urn:ietf:params:oauth:client-assertion-type:jwt-bearer',
+			'client_assertion'		=> this.generateJWS(authProviderConfiguration),
+			'scope'					=> authProviderConfiguration.get(this.SCOPE_FIELD_NAME)?.trim()
+		});
+
 		// Create the request to the token endpoint
 		HttpRequest httpRequest = new HttpRequest(); 
 		httpRequest.setEndpoint(authProviderConfiguration.get(this.TOKEN_ENDPOINT_FIELD_NAME)?.trim()); 
@@ -236,6 +238,7 @@ public with sharing class OAuthJwtClientAuthentication extends Auth.AuthProvider
 			authProviderConfiguration.get(this.TOKEN_HEADERS_FIELD_NAME)?.trim(),
 			httpRequest
 		);
+
 		
 		// fetch the response
 		HTTPResponse res = new Http().send(httpRequest); 
@@ -265,7 +268,7 @@ public with sharing class OAuthJwtClientAuthentication extends Auth.AuthProvider
 		// Create the JWK header
 		String header = JSON.serialize(new Map<String,String>{
 			'alg' => this.validateJwsHeaderAlgorithm(authProviderConfiguration.get(this.JWT_ALGORITHM_FIELD_NAME)?.trim()),
-			'typ' => authProviderConfiguration.get(this.JWT_TYPE_FIELD_NAME)?.trim(),
+			'typ' => 'JWT',
 			'kid' => authProviderConfiguration.get(this.JWT_KID_FIELD_NAME)?.trim()
 		});
 
@@ -396,6 +399,41 @@ public with sharing class OAuthJwtClientAuthentication extends Auth.AuthProvider
 			}
 		}
 		throw new JwsException(this.JWS_INVALID_SIGN_ALG_EXCEPTION_MSG);
+	}
+
+
+	/**
+	 * @description Method to convert a key/value map into a URL encoded parameter query string that
+	 *              can be used with url-encoded forms or get queries
+	 * @param       parameterValueMap A key/value map that contains the parameter name and the
+	 *                                parameter value
+	 * @return      a url encoded parameter string formatted like "?key1=value1&key2=value2"
+	 */
+	private String urlParameterQueryString(Map<String,String> parameterValueMap){
+		
+		// Return an emtpy string if the input is null
+		if(parameterValueMap == null || parameterValueMap.isEmpty()){
+			return '';
+		}
+
+		// Start the query string
+		String queryString ='';
+
+		// Parameter string format
+		final String PARAMETER_TEMPLATE = '{0}{1}={2}';
+
+		// Add parameter if the parameter has a value
+		for(String parameter : parameterValueMap.keySet()){
+			if(String.isNotBlank(parameterValueMap.get(parameter))){
+				queryString += String.format(PARAMETER_TEMPLATE, new String[]{
+					((String.isBlank(queryString)) ? '' : '&'),
+					parameter,
+					EncodingUtil.urlEncode(parameterValueMap.get(parameter), 'UTF-8')
+				});
+			}
+		}
+		// Return the query string
+		return queryString;
 	}
 
 

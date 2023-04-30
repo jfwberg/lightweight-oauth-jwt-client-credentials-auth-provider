@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ValidationRule xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Auth_Pr_Name_Needs_To_Match_URL_Suffix</fullName>
+    <active>true</active>
+    <description>The &quot;Auth Provider Name&quot; value needs to match the record &quot;URL Suffix&quot; value</description>
+    <errorConditionFormula>NOT(Auth_Provider_Name__c == DeveloperName)</errorConditionFormula>
+    <errorMessage>The &quot;Auth Provider Name&quot; value needs to match the record &quot;URL Suffix&quot; value</errorMessage>
+</ValidationRule>

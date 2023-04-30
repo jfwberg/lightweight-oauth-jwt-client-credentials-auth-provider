@@ -14,14 +14,19 @@ The grant type standards are described in https://datatracker.ietf.org/doc/html/
 - The public key needs te be shared with the authorisation server and setup according to their standards, usually a JWKS
 - You'll need all the authorization server details that are required to setup the connection
 
+## 00 :: Deployment and Preparation
+1. Import the JWT signing certificate into Salesforce, Note down the *Certificate API Name*
+2. Deploy the *Apex class* and the *Custom Metadata (including layouts)* from this SFDX Pproject to your Org (Or install the package)
+
 ## 01 :: Setup the Auth. Provider
 In my example I am going to connect an api called "PiMoria"; this my test domain that I will use throughout this example.
 
-1. Import the JWT signing certificate into Salesforce (or create a self signed cert), Note down the *Certificate API Name*
-2. Deploy the *Apex class* and the *Custom Metadata (including layouts)* to your Org (Or install the package)
-3. In setup > Auth Providers > Create a new Auth. Provider Using the *OAuthJwtClientCredentials* class as the type
-4. Populate the *Execute Registration As* field first, this is a mandatory field that is not marked as mandatory and will reset the entire form if you forget it. 
-5. Populate the fields in the the Auth. Provider. The below table details what is required in the fields
+1. In setup > Auth Providers > Create a new Auth. Provider Using the *OAuthJwtClientCredentials* class as the type
+![image info](./media/01_Auth_Provider.png)
+
+2. Populate the *Execute Registration As* field first, this is a mandatory field that is not marked as mandatory and will reset the entire form if you forget it. 
+3. Populate the fields in the the Auth. Provider. The below table details what is required in the fields
+4. Triple check you put in all mandatory fields: If you have forgotten one, you have to re-do them all
 
 | Field Name                        | Description                                                                                                                                                                   | Example                              |
 |-----------------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|--------------------------------------|
@@ -40,19 +45,29 @@ In my example I am going to connect an api called "PiMoria"; this my test domain
 | Scope                             | Optional value for the scope parameter in the request body                                                                                                                    | api,refresh_token                    |
 | Custom Callback URL               | Optionally you can add your custom callback URL, this should not be required. The code generates the callback URL based on the name                                           |                                      |
 
+When finished it should look like something like this
+![image info](./media/02_Auth_Provider_Setup.png)
+
 ## 02 :: Setup The Remote Site Setting(s)
 In order to make API call-outs to the token endpoint securely, we must setup a remote site setting for the token endpoint.
 
 1. Go to Setup > Security > Remote Site Settings and click *New*
 2. Populate the *Remote Site URL* field with the *Token Endpoint Base URL* and set a *Name* and *Description*
 3. Press *Save*
-4. If your API Base URL is different than your token URL, you need to create separate Remote Site Setting for this API
+4. If your API Base URL is different than your token URL, you need to create separate Remote Site Setting for this API. In my example case, the base URL is the same.
+![image info](./media/03_Remote_Site_Setting.png)
+
 
 ## 03 :: Create a Permission Set for the External Credential
 External Credentials require a Permission Set in order to create a credential type mapping. It's best practice to create a separate Permisison Set for each Extern Credential to keep a strict separation and stick to the least access principle.
+At this stage you don't have to assign any permissions, this will happen later.
+1. In Setup > Users > Permission Sets, Click *New*
+2. Set a *Label* and an *API Name*, write the API Name down, we're going to need this later.
+3. Assign the Permission Set to the testing user, probably the user you're logged in with
+![image info](./media/04_Permission_Set.png)
 
 ## 04 :: Setup the External Credential
-Your Auth Provider is now ready for testing. The next step is to create an external credential that connects using your Auth Provider.
+Your Auth Provider is now ready for testing. The next step is to create an External Credential that authenticates to the token endpoint using the Auth Provider.
 
 1. Go to setup > Security > Named Credentials and click the *External Credentials tab*
 2. Click *New*, Set  A Label and a Name
@@ -60,30 +75,66 @@ Your Auth Provider is now ready for testing. The next step is to create an exter
 4. Set *Authentication Flow Type* to *Browser Flow*. The *Scope* field can be left blank. This is overwritten by our Auth. Provider Settings.
 5. Select your created Auth. Provider from the *Auth Provider Picklist* 
 6. Press Save
+![image info](./media/05_External_Credential.png)
 7. Scroll down to the *Permission Set Mappings* section and press *New*
-8. 
+8. For the *Permission Set*, select the Permission Set You created in Step 3.1. Set the *Identity Type* field to *Named Principal*. You can ignore the sequence number. This can stay default.
+9. Press Save
+![image info](./media/06_Permission_Set_Mapping.png)
+
+## 05 Connect your External Credential through the Auth Provider
+You have no finished setting up the external credetials and the auth provider it's time to test it by callign the token endpoint and authenticate.
+
+1. Click on the arrow button next to the Permission Set Mapping in the actions column
+2. Click *Authenticate*, Salesforce now call the token endpoint and execute the logic from the Apex class to get a token. It will redirect you to the same page (This is the redirect URL that is auto generated in the class.)
+![image info](./media/07_Authenticate.png)
+3. If you're successful you get a sucess message, if you're unsuccesful you have to start debugging.
+![image info](./media/08_Authentication_Success.png)
 
 
+## 06 Debugging and Common Errors
+* Forgotten to set the Remote Site Settings
+* Forgotten to assign the permission set
+* Wrong certificate name (Note this is Case Sensitive, you get a "System.NoDataFoundException: Data Not Available" exception if the certificate API Name is wrong)
+* Any other (JWT) configuration details. If this is the case the debug logs with show the response as an *OAuthJwtClientCredentials.TokenException* will be thrown.
+I  don't want to go to deep into debugging but a few pointers:
+* Set the trace flag on the executing user
+* Clean your debug logs in setup, execute the code and see the logs
+* Alternatively, open your developer console to stream the logs
 
+## 07 Create a Named Credential
+Once you have successfully authenticated your external credential and you want to use this connection from Apex or Flows to call an API we'll need a Named Credential
+1. Go to setup > Security > Named Credentials and click the *NAmed Credentials tab*
+2. Click *New* (Note we are NOT creating a legacy named credential, we're modern)
+3. Give your credential a *Label* and a *Name*
+4. Populate the *URL* field with the base URL of the API (Not the token endpoint). Quite often these are the same.
+5. Select your *External Credential* you created in step 4.2
+6. Make sure *Generate Authorization Header* is selected, this is by default
+7. Optionally you can select a namespace and a network if you use prive connect.
+8. Press Save
+![image info](./media/09_Named_Credential.png)
 
-## Todo: 
-- Improve the Test Class, add branched if/else scenarios and test the utility methods
-- Run PMD / Graph scan and fix any issues
-- Extend header length to match text width to help my OCD
-- Explain the way to debug
+## 08 Test the Named Credential
+Now you have everything you need. Let's open up and execute anonymous window and call one of our endpoints.
+* If there is an invalid token a 401 response code will be received. If this happens the external credential will call the refresh token logic through the Auth Provider Automatically and take care of all of that overhead.
+*  *callout:[NamedCredentialApiNAme]:* will be replaced by the base URL as specified in the step 7.4.
+* Update and run the following code snippet and you should be able to successfully call the API.
 
-
+```java
+HttpRequest request = new HttpRequest();
+request.setEndPoint('callout:PiMoria/api/authentication-test');
+request.setMethod('POST');
+HttpResponse response = new HTTP().send(request);
+System.debug(response.getBody());
+```
 ## Note on coding
 - Everything is kept in a single class, to make it small and stand-alone. This includes any validations that could have been in validation rules or messages that could have been in custom labels. This is a contious design decision to keep everything together.
-This is a single class with a single purpose, you either want to package it or keep it nicely together.
-- Any confguration values are in a constant at the top following the common code structure
+- Any confguration values should be in a constant at the top following the common code structure
 - Always use the this keyword properly for readability
-- Always add ApexDoc headers even if it seems overkill, it's just good practice
+- Always add ApexDoc headers even if it seems overkill, it's just good practice and easy to document
 - Certificate related methods cannot be tested because Apex cannot mock certificates. The alternative is to supply a certificate name in the test class but I'd like to keep the tests org agnostic
+- It's OK to use the @SuppressWarnings annotation but always mention the false-positives
 	
-
-
-## Steps to import a certificate store (JKS) in a scratch Org when getting "Data Not Available" error message on import
+## Steps to import a certificate store (JKS) in a Scratch Org when getting "Data Not Available" error message on import
 In some cases there is a bug in the certificate import that gives an error if you try to import a JKS It says "Data Not Available".
 I have this issue in all my scratch orgs. There is a simple way to resolve this.
 1) Go to setup > certificate and key management

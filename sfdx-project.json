@@ -2,7 +2,7 @@
   "packageDirectories": [
 	{
 		"path": "force-app",
-		"default": true,
+		"default": false,
 		"package": "OAuth 2.0 JWT Client Credentials Authentication Auth Provider",
 		"versionName": "0.1",
 		"versionNumber": "0.1.0.NEXT",
@@ -10,7 +10,7 @@
 	},
 	{
 		"path": "force-demo-data",
-		"default": false,
+		"default": true,
 		"package": "OAuth 2.0 JWT Client Credentials Authentication Auth Provider - Demo Data",
 		"versionName": "0.1",
 		"versionNumber": "0.1.0.NEXT",

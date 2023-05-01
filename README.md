@@ -7,7 +7,6 @@ The grant type standards are described in https://datatracker.ietf.org/doc/html/
 - Security is no easy subject: Before implementing this (or any) solution, always validate what you're doing with a certified sercurity expert and your certified implementation partner
 - At the time of writing I work for Salesforce. The views / solutions presented here are strictly MY OWN and NOT per definition the views or solutions Salesforce would recommend. Again; always consult with your certified implementation partner before implementing anything.
 
-
 ## Pre-requisites
 - A certificate with private key that is used for signing the JWT with a JWS that is imported in the Salesforce certificate key store
 - Alternatively you can use a self signed certificate for testing purposes
@@ -17,6 +16,7 @@ The grant type standards are described in https://datatracker.ietf.org/doc/html/
 ## 00 :: Deployment and Preparation
 1. Import the JWT signing certificate into Salesforce, Note down the *Certificate API Name*
 2. Deploy the *Apex class* and the *Custom Metadata (including layouts)* from this SFDX Pproject to your Org (Or install the package)
+3. The package can be found here: *https://[MY_DOMAIN_URL]/packaging/installPackage.apexp?p0=04t6S000001EATBQA4*
 
 ## 01 :: Setup the Auth. Provider
 In my example I am going to connect an api called "PiMoria"; this my test domain that I will use throughout this example.

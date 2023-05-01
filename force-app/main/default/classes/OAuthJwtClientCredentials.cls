@@ -9,48 +9,48 @@
  */
 public with sharing class OAuthJwtClientCredentials extends Auth.AuthProviderPluginClass{
 
-    /** ******************************************************************************** **
-     **                                PRIVATE CONSTANTS                                 **
-     ** ******************************************************************************** **/
+	/** **************************************************************************************************** **
+	 **                                          PRIVATE CONSTANTS                                           **
+	 ** **************************************************************************************************** **/
     // Grant details
-    @TestVisible private final String SCOPE_FIELD_NAME          = String.valueOf(OAuth_JWT_Client_Authentication__mdt.Scope__c);
-    @TestVisible private final String TOKEN_ENDPOINT_FIELD_NAME = String.valueOf(OAuth_JWT_Client_Authentication__mdt.Token_Endpoint_URL__c);
-    @TestVisible private final String TOKEN_HEADERS_FIELD_NAME  = String.valueOf(OAuth_JWT_Client_Authentication__mdt.Additional_Token_Endpoint_Headers__c);
-    @TestVisible private final String CUSTOM_CALLBACK_FIELD_NAME= String.valueOf(OAuth_JWT_Client_Authentication__mdt.Custom_Callback_URL__c);
+    @TestVisible private final static String SCOPE_FIELD_NAME          = String.valueOf(OAuth_JWT_Client_Authentication__mdt.Scope__c);
+    @TestVisible private final static String TOKEN_ENDPOINT_FIELD_NAME = String.valueOf(OAuth_JWT_Client_Authentication__mdt.Token_Endpoint_URL__c);
+    @TestVisible private final static String TOKEN_HEADERS_FIELD_NAME  = String.valueOf(OAuth_JWT_Client_Authentication__mdt.Additional_Token_Endpoint_Headers__c);
+    @TestVisible private final static String CUSTOM_CALLBACK_FIELD_NAME= String.valueOf(OAuth_JWT_Client_Authentication__mdt.Custom_Callback_URL__c);
 
     // JWT Header info
-    @TestVisible private final String JWT_ALGORITHM_FIELD_NAME  = String.valueOf(OAuth_JWT_Client_Authentication__mdt.JWT_Algorithm__c);
-    @TestVisible private final String JWT_KID_FIELD_NAME        = String.valueOf(OAuth_JWT_Client_Authentication__mdt.JWT_Kid__c);
+    @TestVisible private final static String JWT_ALGORITHM_FIELD_NAME  = String.valueOf(OAuth_JWT_Client_Authentication__mdt.JWT_Algorithm__c);
+    @TestVisible private final static String JWT_KID_FIELD_NAME        = String.valueOf(OAuth_JWT_Client_Authentication__mdt.JWT_Kid__c);
 
     // JWT Settings
-    @TestVisible private final String JWT_SUBJECT_FIELD_NAME    = String.valueOf(OAuth_JWT_Client_Authentication__mdt.JWT_Subject__c);
-    @TestVisible private final String JWT_ISSUER_FIELD_NAME     = String.valueOf(OAuth_JWT_Client_Authentication__mdt.JWT_Issuer__c);
-    @TestVisible private final String JWT_AUDIENCE_FIELD_NAME   = String.valueOf(OAuth_JWT_Client_Authentication__mdt.JWT_Audience__c);
+    @TestVisible private final static String JWT_SUBJECT_FIELD_NAME    = String.valueOf(OAuth_JWT_Client_Authentication__mdt.JWT_Subject__c);
+    @TestVisible private final static String JWT_ISSUER_FIELD_NAME     = String.valueOf(OAuth_JWT_Client_Authentication__mdt.JWT_Issuer__c);
+    @TestVisible private final static String JWT_AUDIENCE_FIELD_NAME   = String.valueOf(OAuth_JWT_Client_Authentication__mdt.JWT_Audience__c);
     
     // Specify the name for your auth provider for the callback URL
-    @TestVisible private final String AUTH_PROVIDER_NAME_FIELD_NAME     = String.valueOf(OAuth_JWT_Client_Authentication__mdt.Auth_Provider_Name__c);
+    @TestVisible private final static String AUTH_PROVIDER_NAME_FIELD_NAME     = String.valueOf(OAuth_JWT_Client_Authentication__mdt.Auth_Provider_Name__c);
 
     // The API name of the certificate and the algorithm used for signing the JWT
-    @TestVisible private final String JWS_SIGNING_CERT_FIELD_NAME       = String.valueOf(OAuth_JWT_Client_Authentication__mdt.JWT_Signing_Certificate_Name__c);
-    @TestVisible private final String JWS_SIGNING_ALGORITHM_FIELD_NAME  = String.valueOf(OAuth_JWT_Client_Authentication__mdt.JWT_Signing_Algorithm__c);
+    @TestVisible private final static String JWS_SIGNING_CERT_FIELD_NAME       = String.valueOf(OAuth_JWT_Client_Authentication__mdt.JWT_Signing_Certificate_Name__c);
+    @TestVisible private final static String JWS_SIGNING_ALGORITHM_FIELD_NAME  = String.valueOf(OAuth_JWT_Client_Authentication__mdt.JWT_Signing_Algorithm__c);
 
     // Parameter names
-    @TestVisible private final String PARAM_NAME_STATE = 'state';
+    @TestVisible private final static String PARAM_NAME_STATE = 'state';
 
     // Valid algorithm for JKS Header and JWT Signing Certificate for validating the user inputs based on availible SFDC functionality
-    @TestVisible private final Set<String> VALID_JWS_HEADER_ALGORITHMS  = new Set<String>{'RS256','RS384','RS512','ES256','ES384','ES512'};
-    @TestVisible private final Set<String> VALID_JWS_SIGNING_ALGORITHMS = new Set<String>{'RSA-SHA256','RSA-SHA384','RSA-SHA512','ECDSA-SHA256','ECDSA-SHA384','ECDSA-SHA512'};
+    @TestVisible private final static Set<String> VALID_JWS_HEADER_ALGORITHMS  = new Set<String>{'RS256','RS384','RS512','ES256','ES384','ES512'};
+    @TestVisible private final static Set<String> VALID_JWS_SIGNING_ALGORITHMS = new Set<String>{'RSA-SHA256','RSA-SHA384','RSA-SHA512','ECDSA-SHA256','ECDSA-SHA384','ECDSA-SHA512'};
     
     // Any messages go here
-    @TestVisible private final String INVALID_TOKEN_RESPONSE_MSG            = 'Unexpected response when calling the token endpoint: {0}';
-    @TestVisible private final String JWS_INVALID_HEAD_ALG_EXCEPTION_MSG    = 'Invalid JWS Header Algorithm provided. Valid values are: \'RS256\',\'RS384\',\'RS512\',\'ES256\',\'ES384\' and \'ES512\'';
-    @TestVisible private final String JWS_INVALID_SIGN_ALG_EXCEPTION_MSG    = 'Invalid JWS Signing Algorithm provided. Valid values are: \'RSA-SHA256\',\'RSA-SHA384\',\'RSA-SHA512\',\'ECDSA-SHA256\',\'ECDSA-SHA384\',\'ECDSA-SHA512\'';
+    @TestVisible private final static String INVALID_TOKEN_RESPONSE_MSG            = 'Unexpected response when calling the token endpoint: {0}';
+    @TestVisible private final static String JWS_INVALID_HEAD_ALG_EXCEPTION_MSG    = 'Invalid JWS Header Algorithm provided. Valid values are: \'RS256\',\'RS384\',\'RS512\',\'ES256\',\'ES384\' and \'ES512\'';
+    @TestVisible private final static String JWS_INVALID_SIGN_ALG_EXCEPTION_MSG    = 'Invalid JWS Signing Algorithm provided. Valid values are: \'RSA-SHA256\',\'RSA-SHA384\',\'RSA-SHA512\',\'ECDSA-SHA256\',\'ECDSA-SHA384\',\'ECDSA-SHA512\'';
     
     
 
-    /** ******************************************************************************** **
-     **                             PUBLIC INTERFACE METHODS                             **
-     ** ******************************************************************************** **/
+    /** **************************************************************************************************** **
+     **                                       PUBLIC INTERFACE METHODS                                       **
+     ** **************************************************************************************************** **/
     /**
      * @description     Returns the URL where the user is redirected for authentication.
      * @param           authProviderConfiguration The configuration items for the custom authentication
@@ -69,7 +69,7 @@ public with sharing class OAuthJwtClientCredentials extends Auth.AuthProviderPlu
         PageReference pageReference = this.getSfdcCallbackURL(authProviderConfiguration);
         
         // Add the state parameter
-        pageReference.getParameters().put(this.PARAM_NAME_STATE, stateToPropagate);
+        pageReference.getParameters().put(PARAM_NAME_STATE, stateToPropagate);
 
         // Return the pageReference
         return pageReference;
@@ -96,10 +96,10 @@ public with sharing class OAuthJwtClientCredentials extends Auth.AuthProviderPlu
         
         // Return the the token response, there is no refresh token so we just set a random value
         return new Auth.AuthProviderTokenResponse(
-            authProviderConfiguration.get(this.AUTH_PROVIDER_NAME_FIELD_NAME)?.trim(),
+            authProviderConfiguration.get(AUTH_PROVIDER_NAME_FIELD_NAME)?.trim(),
             tokenResponse.access_token,
             'NoRefreshTokenInThisOAuthFlow',
-            callbackState.queryParameters.get(this.PARAM_NAME_STATE)
+            callbackState.queryParameters.get(PARAM_NAME_STATE)
         ); 
     }
     
@@ -145,15 +145,15 @@ public with sharing class OAuthJwtClientCredentials extends Auth.AuthProviderPlu
     public Auth.UserData getUserInfo(Map<string,string> authProviderConfiguration, Auth.AuthProviderTokenResponse response) {
         return new Auth.UserData(
             'IntegrationUserId',// User Id
-            'Integration',        // First Name
-            'User',                // Last Name
-            'Integration User',    // Full Name
-            'integration.user@example.com.invalid',    // Email Address
-            'link',                // Link
-            null,                // Username
-            null,                 // Locale
-            null,                // Provider
-            null,                // Site login
+            'Integration',      // First Name
+            'User',             // Last Name
+            'Integration User', // Full Name
+            'integration.user@example.com.invalid', // Email Address
+            'link',             // Link
+            null,               // Username
+            null,               // Locale
+            null,               // Provider
+            null,               // Site login
             null                // Attribute map
         );
     }
@@ -169,9 +169,9 @@ public with sharing class OAuthJwtClientCredentials extends Auth.AuthProviderPlu
     }
 
 
-    /** ******************************************************************************** **
-     **                             PRIVATE SUPPORT METHODS                              **
-     ** ******************************************************************************** **/
+    /** **************************************************************************************************** **
+     **                                       PRIVATE SUPPORT METHODS                                        **
+     ** **************************************************************************************************** **/
     /**
      * @description     Method to Generate the standard Salesforce Auth Provider callback URL for the
      *                  specific Auth Provider Name.
@@ -186,13 +186,13 @@ public with sharing class OAuthJwtClientCredentials extends Auth.AuthProviderPlu
     private PageReference getSfdcCallbackURL(Map<String,String> authProviderConfiguration){
         
         // If you have  custom callback URL specified, return the custom callback URL
-        if(String.isNotBlank(authProviderConfiguration.get(this.CUSTOM_CALLBACK_FIELD_NAME)?.trim())){
-            return new PageReference(authProviderConfiguration.get(this.CUSTOM_CALLBACK_FIELD_NAME)?.trim());
+        if(String.isNotBlank(authProviderConfiguration.get(CUSTOM_CALLBACK_FIELD_NAME)?.trim())){
+            return new PageReference(authProviderConfiguration.get(CUSTOM_CALLBACK_FIELD_NAME)?.trim());
         }
         
         // By default generate the Standard Salesforce Callback URL for the Auth Provider
         return new PageReference(
-            URL.getSalesforceBaseUrl().toExternalForm() + '/services/authcallback/' + authProviderConfiguration.get(this.AUTH_PROVIDER_NAME_FIELD_NAME)?.trim()
+            URL.getSalesforceBaseUrl().toExternalForm() + '/services/authcallback/' + authProviderConfiguration.get(AUTH_PROVIDER_NAME_FIELD_NAME)?.trim()
         );
     }
 
@@ -204,6 +204,36 @@ public with sharing class OAuthJwtClientCredentials extends Auth.AuthProviderPlu
      */
     private TokenResponse parseTokenResponse(String tokenResponseJSON){
         return (TokenResponse) JSON.deserialize(tokenResponseJSON, TokenResponse.class);
+    }
+
+
+    /**
+     * @description Method to generate an HttpRequest object that can be used to retrieve the token.
+     * @param       authProviderConfiguration The configuration items for the custom authentication
+     *                                        provider that have been configured in the custom metadata
+     *                                        type.
+     * @param       body                      The request body content
+     * @return      HttpRequest to fetch the token
+     * @note        This method has been split for testability reasons: Not all data could be accessed
+     *              otherwise.
+     */
+    @TestVisible
+    private HttpRequest generateHttpRequest(Map<String,String> authProviderConfiguration, String body){
+        
+        // Create the request to the token endpoint
+        HttpRequest httpRequest = new HttpRequest(); 
+        httpRequest.setEndpoint(authProviderConfiguration.get(TOKEN_ENDPOINT_FIELD_NAME)?.trim()); 
+        httpRequest.setHeader('Content-Type','application/x-www-form-urlencoded'); 
+        httpRequest.setMethod('POST'); 
+        httpRequest.setBody(body);
+        
+        // Add optional custom headers to the token request (i.e. things like API keys,  X-Correlation-Id etc.)
+        this.addStringHeadersToRequest(
+            authProviderConfiguration.get(TOKEN_HEADERS_FIELD_NAME)?.trim(),
+            httpRequest
+        );
+        // Return the request ready for sending
+        return httpRequest;
     }
 
 
@@ -223,33 +253,27 @@ public with sharing class OAuthJwtClientCredentials extends Auth.AuthProviderPlu
             'grant_type'            => 'client_credentials',
             'client_assertion_type' => 'urn:ietf:params:oauth:client-assertion-type:jwt-bearer',
             'client_assertion'      => this.generateJWS(authProviderConfiguration),
-            'scope'                 => authProviderConfiguration.get(this.SCOPE_FIELD_NAME)?.trim()
+            'scope'                 => authProviderConfiguration.get(SCOPE_FIELD_NAME)?.trim()
         });
 
-        // Create the request to the token endpoint
-        HttpRequest httpRequest = new HttpRequest(); 
-        httpRequest.setEndpoint(authProviderConfiguration.get(this.TOKEN_ENDPOINT_FIELD_NAME)?.trim()); 
-        httpRequest.setHeader('Content-Type','application/x-www-form-urlencoded'); 
-        httpRequest.setMethod('POST'); 
-        httpRequest.setBody(body);
-        
-        // Add optional custom headers to the token request (i.e. things like API keys,  X-Correlation-Id etc.)
-        this.addStringHeadersToRequest(
-            authProviderConfiguration.get(this.TOKEN_HEADERS_FIELD_NAME)?.trim(),
-            httpRequest
-        );
-
-        
-        // fetch the response
-        HTTPResponse res = new Http().send(httpRequest); 
+        // Send thefetch the response
+        HttpResponse httpResponse = new Http().send(
+            this.generateHttpRequest(
+                authProviderConfiguration,
+                body
+            )
+        ); 
 
         // Check the status is as expexted or throw an exception
-        if(res.getStatusCode() != 200){
-            throw new TokenException(String.format(this.INVALID_TOKEN_RESPONSE_MSG, new String[]{res.getBody()}));
+        if(httpResponse.getStatusCode() != 200){
+            throw new TokenException(String.format(
+                INVALID_TOKEN_RESPONSE_MSG,
+                new String[]{httpResponse.getBody()}
+            ));
         }
 
         // Parse the response into a token response
-        return this.parseTokenResponse(res.getBody());
+        return this.parseTokenResponse(httpResponse.getBody());
     }
 
 
@@ -267,16 +291,16 @@ public with sharing class OAuthJwtClientCredentials extends Auth.AuthProviderPlu
         
         // Create the JWK header
         String header = JSON.serialize(new Map<String,String>{
-            'alg' => this.validateJwsHeaderAlgorithm(authProviderConfiguration.get(this.JWT_ALGORITHM_FIELD_NAME)?.trim()),
+            'alg' => this.validateJwsHeaderAlgorithm(authProviderConfiguration.get(JWT_ALGORITHM_FIELD_NAME)?.trim()),
             'typ' => 'JWT',
-            'kid' => authProviderConfiguration.get(this.JWT_KID_FIELD_NAME)?.trim()
+            'kid' => authProviderConfiguration.get(JWT_KID_FIELD_NAME)?.trim()
         });
 
         // Create the JWT payload
         String payload = JSON.serialize(new Map<String,Object>{
-            'iss' => authProviderConfiguration.get(this.JWT_ISSUER_FIELD_NAME)?.trim(),
-            'aud' => authProviderConfiguration.get(this.JWT_AUDIENCE_FIELD_NAME)?.trim(),
-            'sub' => authProviderConfiguration.get(this.JWT_SUBJECT_FIELD_NAME)?.trim(),
+            'iss' => authProviderConfiguration.get(JWT_ISSUER_FIELD_NAME)?.trim(),
+            'aud' => authProviderConfiguration.get(JWT_AUDIENCE_FIELD_NAME)?.trim(),
+            'sub' => authProviderConfiguration.get(JWT_SUBJECT_FIELD_NAME)?.trim(),
             'exp' => (DateTime.now().addSeconds(300).getTime() / 1000),
             'jti' => this.generateGUID()
         });        
@@ -292,9 +316,9 @@ public with sharing class OAuthJwtClientCredentials extends Auth.AuthProviderPlu
         // Generate the signature
         String b64UrlEncodedSignature = (!Test.isRunningTest()) ? this.base64UrlEncode(
             Crypto.signWithCertificate(
-                this.validateJwsSigningAlgorithm(authProviderConfiguration.get(this.JWS_SIGNING_ALGORITHM_FIELD_NAME)?.trim()),
+                this.validateJwsSigningAlgorithm(authProviderConfiguration.get(JWS_SIGNING_ALGORITHM_FIELD_NAME)?.trim()),
                 Blob.valueOf(b64UrlEncodedHeaderAndPayload),
-                authProviderConfiguration.get(this.JWS_SIGNING_CERT_FIELD_NAME)?.trim()
+                authProviderConfiguration.get(JWS_SIGNING_CERT_FIELD_NAME)?.trim()
             )
         ) : '[TEST_CLASS_VALUE_BECAUSE_THERE_IS_NO_MOCK_CERT_OPTION]';
 
@@ -306,9 +330,9 @@ public with sharing class OAuthJwtClientCredentials extends Auth.AuthProviderPlu
     }
 
 
-    /** ******************************************************************************** **
-     **                             PRIVATE UTILITY METHODS                              **
-     ** ******************************************************************************** **/
+    /** **************************************************************************************************** **
+     **                                       PRIVATE UTILITY METHODS                                        **
+     ** **************************************************************************************************** **/
     /**
      * @description Method for encoding a Blob into a Base64 URL encoded String.
      *              This is required for generating the JWS
@@ -349,21 +373,24 @@ public with sharing class OAuthJwtClientCredentials extends Auth.AuthProviderPlu
      * @param       httpRequest The HttpRequest object to add the header values to
      */
     private void addStringHeadersToRequest(String headerValue, HttpRequest httpRequest){
-        if(String.isNotBlank(headerValue)){
+        
+        // Validate the header has a value
+        if(String.isBlank(headerValue)){
+            return;
+        }
+
+        // Each header should be split by a comma, due to fact multi line is not supported
+        for(String line : headerValue.split(',')){
             
-            // Each header should be split by a comma, due to fact multi line is not supported
-            for(String line : headerValue.split(',')){
+            // Check the line contains a colon but still has a value after the colon
+            if(line.contains(':')){
                 
-                // Check the line contains a colon but still has a value after the colon
-                if(line.contains(':')){
-                    
-                    // Split the value in key value pair
-                    String[] keyValueList = line.split(':');
-                    
-                    // Validate the header is correct and has a 
-                    if(keyValueList.size() == 2){
-                        httpRequest.setHeader(keyValueList[0]?.trim(), keyValueList[1]?.trim());
-                    }
+                // Split the value in key value pair
+                String[] keyValueList = line.split(':');
+                
+                // Validate the header is correct and has a 
+                if(keyValueList.size() == 2){
+                    httpRequest.setHeader(keyValueList[0]?.trim(), keyValueList[1]?.trim());
                 }
             }
         }
@@ -376,9 +403,10 @@ public with sharing class OAuthJwtClientCredentials extends Auth.AuthProviderPlu
      * @return      Name of the input algorithm if validated
      * @throws      JwsException The algorithm is invalid
      */
+    @TestVisible
     private String validateJwsHeaderAlgorithm(String algorithm){
         if(String.isNotBlank(algorithm)){
-            if(this.VALID_JWS_HEADER_ALGORITHMS.contains(algorithm?.trim())){
+            if(VALID_JWS_HEADER_ALGORITHMS.contains(algorithm?.trim())){
                 return algorithm;
             }
         }
@@ -392,13 +420,14 @@ public with sharing class OAuthJwtClientCredentials extends Auth.AuthProviderPlu
      * @return      Name of the input algorithm if validated
      * @throws      JwsException The algorithm is invalid
      */
-    private String validateJwsSigningAlgorithm(String algorithm){
+    @TestVisible
+     private String validateJwsSigningAlgorithm(String algorithm){
         if(String.isNotBlank(algorithm)){
-            if(this.VALID_JWS_SIGNING_ALGORITHMS.contains(algorithm?.trim())){
+            if(VALID_JWS_SIGNING_ALGORITHMS.contains(algorithm?.trim())){
                 return algorithm;
             }
         }
-        throw new JwsException(this.JWS_INVALID_SIGN_ALG_EXCEPTION_MSG);
+        throw new JwsException(JWS_INVALID_SIGN_ALG_EXCEPTION_MSG);
     }
 
 
@@ -420,12 +449,12 @@ public with sharing class OAuthJwtClientCredentials extends Auth.AuthProviderPlu
         String queryString ='';
 
         // Parameter string format
-        final String PARAMETER_TEMPLATE = '{0}{1}={2}';
+        final String parameterTemplate = '{0}{1}={2}';
 
         // Add parameter if the parameter has a value
         for(String parameter : parameterValueMap.keySet()){
             if(String.isNotBlank(parameterValueMap.get(parameter))){
-                queryString += String.format(PARAMETER_TEMPLATE, new String[]{
+                queryString += String.format(parameterTemplate, new String[]{
                     ((String.isBlank(queryString)) ? '' : '&'),
                     parameter,
                     EncodingUtil.urlEncode(parameterValueMap.get(parameter), 'UTF-8')
@@ -437,16 +466,26 @@ public with sharing class OAuthJwtClientCredentials extends Auth.AuthProviderPlu
     }
 
 
-    /** ******************************************************************************** **
-     **                            PRIVATE EXCEPTION CLASSES                             **
-     ** ******************************************************************************** **/
-    private class JwsException        extends Exception{}
+    /** **************************************************************************************************** **
+     **                                      PRIVATE EXCEPTION CLASSES                                       **
+     ** **************************************************************************************************** **/
+    /**
+     * @description Custom Exception thrown when there is an issue generating the JWS.
+     */
+    @TestVisible
+    private class JwsException      extends Exception{}
+
+
+    /**
+     * @description Custom Exception thrown when there is an issue generating the token.
+     */
+    @TestVisible
     private class TokenException    extends Exception{}
 
 
-    /** ******************************************************************************** **
-     **                          PRIVATE DATA STRUCTURE CLASSES                          **
-     ** ******************************************************************************** **/
+    /** **************************************************************************************************** **
+     **                                    PRIVATE DATA STRUCTURE CLASSES                                    **
+     ** **************************************************************************************************** **/
     /**
      * @description     Class representing the data strcuture of an OAuth Token Response as described in standard:
      *                  https://datatracker.ietf.org/doc/html/rfc6749#section-4.2.2
@@ -454,7 +493,7 @@ public with sharing class OAuthJwtClientCredentials extends Auth.AuthProviderPlu
      *                  deserialize.  In this case the naming conventions will not follow standard
      *                  conventions to accomodate this
      */
-    @SuppressWarnings('PMD.VariableNamingConventions')
+    @SuppressWarnings('PMD.VariableNamingConventions, PMD.FieldNamingConventions')
     @TestVisible
     private class TokenResponse{
         

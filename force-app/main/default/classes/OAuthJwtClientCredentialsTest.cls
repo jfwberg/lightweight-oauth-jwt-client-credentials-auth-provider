@@ -3,162 +3,267 @@
  * @date        April 2023
  * @copyright   (c) 2023 Justus van den Berg
  * @license     MIT (See LICENSE file in the project root)
- * @description Test class for the OAuthJwtClientCredentials class methods
+ * @description Class for testing the OAuthJwtClientAuthentication Methods
  */
 @IsTest
 private with sharing class OAuthJwtClientCredentialsTest {
-	
-	/** **************************************************************************************************** **
-	 **                                      PRIVATE TEST DATA VARIABLE                                      **
-	 ** **************************************************************************************************** **/
-	// Variables for holding test data
-	private static OAuthJwtClientCredentials authProvider;
-	private static Map<String,String> authProviderConfig; 
+    
+    /** **************************************************************************************************** **
+     **                                      PRIVATE TEST DATA VARIABLE                                      **
+     ** **************************************************************************************************** **/
+    // Variables for holding test data
+    private static OAuthJwtClientCredentials authProvider;
+    private static Map<String,String> authProviderConfig; 
 
 
-	/** **************************************************************************************************** **
-	 **                                             TEST METHODS                                             **
-	 ** **************************************************************************************************** **/
-	@IsTest
-	static void testInitiate(){
-		
-		// Test the method
-		Test.startTest();
-		PageReference pageReference = getAuthProvider().initiate(getAuthProviderConfig(),'TestState');
-		Test.stopTest();
-		
-		// Assert test results
-		System.assertEquals(
-			pageReference.getUrl(),
-			URL.getSalesforceBaseUrl().toExternalForm() + '/services/authcallback/TestAuthProvider?code=NoCodeRequiredButMandatory&state=TestState',
-			'Unexpected callback URL'
-		);
-	}
-
-	@IsTest
-	static void testHandleCallback(){
-		
-		// Set a mock resonse for the token
-		Test.setMock(HttpCalloutMock.class, new MockTokenResponse()); 
-
-		// Test the method
-		Test.startTest();
-		Auth.AuthProviderTokenResponse tokenResponse = getTokenResponse();
-		Test.stopTest();
-
-		// Assert test results
-		System.assertEquals('access_token_value',	tokenResponse.oauthToken, 'Unexpected oauthToken value');
-		System.assertEquals('TestState',			tokenResponse.state		, 'Unexpected state value');
-	}
+    /** **************************************************************************************************** **
+     **                                             TEST METHODS                                             **
+     ** **************************************************************************************************** **/
+    /**
+     * @description Method to test the initiate function
+     */
+    @IsTest
+    static void testInitiate(){
+        
+        // Test the method
+        Test.startTest();
+        PageReference pageReference = getAuthProvider().initiate(getAuthProviderConfig(),'TestState');
+        Test.stopTest();
+        
+        // Assert test results
+        System.assertEquals(
+            pageReference.getUrl(),
+            URL.getSalesforceBaseUrl().toExternalForm() + '/services/authcallback/TestAuthProvider?state=TestState',
+            'Unexpected callback URL'
+        );
+    }
 
 
-	@IsTest
-	static void testRefresh(){
-		
-		// Set a mock resonse for the token
-		Test.setMock(HttpCalloutMock.class, new MockTokenResponse()); 
+    /**
+     * @description Method to test the handleCallback() function
+     */
+    @IsTest
+    static void testHandleCallback(){
+        
+        // Set a mock resonse for the token
+        Test.setMock(HttpCalloutMock.class, new MockTokenResponse()); 
 
-		// Test the method
-		Test.startTest();
-		Auth.OAuthRefreshResult refreshResult = getAuthProvider().refresh(getAuthProviderConfig(),'[REFRESH_TOKEN]');
-		Test.stopTest();
+        // Test the method
+        Test.startTest();
+        Auth.AuthProviderTokenResponse tokenResponse = getTokenResponse();
+        Test.stopTest();
 
-		// Assert test results
-		System.assertEquals('access_token_value',	refreshResult.accessToken, 'Unexpected accessToken value');
-	}
-
-
-	@IsTest
-	static void testGetUserInfo(){
-		
-		// Set a mock resonse for the token
-		Test.setMock(HttpCalloutMock.class, new MockTokenResponse());
-
-		// Test the method
-		Test.startTest();
-		Auth.UserData userData = getAuthProvider().getUserInfo(
-			getAuthProviderConfig(),
-			getTokenResponse()
-		);
-		Test.stopTest();
-
-		// Assert test results
-		System.assertEquals('integration.user@example.com.invalid',	userData.email, 'Unexpected email value');
-	}
+        // Assert test results
+        System.assertEquals('access_token_value',    tokenResponse.oauthToken, 'Unexpected oauthToken value');
+        System.assertEquals('TestState',            tokenResponse.state        , 'Unexpected state value');
+    }
 
 
-	/** **************************************************************************************************** **
-	 **                                      PRIVATE TEST DATA METHODS                                       **
-	 ** **************************************************************************************************** **/
-	/**
-	 * Method to get a token response object
-	 */
-	private static Auth.AuthProviderTokenResponse getTokenResponse(){
-		return getAuthProvider().handleCallback(
-			getAuthProviderConfig(),
-			new Auth.AuthProviderCallbackState(
-				null,
-				null,
-				new Map<String,String>{
-					'code' => 'NoCodeRequiredButMandatory',
-					'state'=> 'TestState'
-				}
-			)
-		);
-	}
+    /**
+     * @description Method to test the refresh() function
+     */
+    @IsTest
+    static void testRefresh(){
+        
+        // Set a mock resonse for the token
+        Test.setMock(HttpCalloutMock.class, new MockTokenResponse()); 
+
+        // Test the method
+        Test.startTest();
+        Auth.OAuthRefreshResult refreshResult = getAuthProvider().refresh(getAuthProviderConfig(),'[REFRESH_TOKEN]');
+        Test.stopTest();
+
+        // Assert test results
+        System.assertEquals('access_token_value',    refreshResult.accessToken, 'Unexpected accessToken value');
+    }
 
 
-	/**
-	 * Method to get a dummy auth provider
-	 */
-	private static OAuthJwtClientCredentials getAuthProvider(){
-		if(authProvider == null){
-			authProvider = new OAuthJwtClientCredentials();
-		}
-		return authProvider;
-	}
+    /**
+     * @description Method to test the getUserInfo() function
+     */
+    @IsTest
+    static void testGetUserInfo(){
+        
+        // Set a mock resonse for the token
+        Test.setMock(HttpCalloutMock.class, new MockTokenResponse());
+
+        // Test the method
+        Test.startTest();
+        Auth.UserData userData = getAuthProvider().getUserInfo(
+            getAuthProviderConfig(),
+            getTokenResponse()
+        );
+        Test.stopTest();
+
+        // Assert test results
+        System.assertEquals('integration.user@example.com.invalid',    userData.email, 'Unexpected email value');
+    }
 
 
-	/**
-	 * Method to generate the dummy configuration data
-	 */
-	private static Map<String,String> getAuthProviderConfig(){
-		if(authProviderConfig == null){
-			authProviderConfig=  new Map<String,String>{
-				getAuthProvider().SCOPE_FIELD_NAME					=> 'web,api',
-				getAuthProvider().TOKEN_ENDPOINT_FIELD_NAME			=> 'https://localhost/oauth/token',
-				getAuthProvider().TOKEN_HEADERS_FIELD_NAME			=> 'apiKey : [TEST_KEY]',
-				getAuthProvider().JWT_ALGORITHM_FIELD_NAME			=> 'RS512',
-				getAuthProvider().JWT_TYPE_FIELD_NAME				=> 'JWT',
-				getAuthProvider().JWT_KID_FIELD_NAME				=> 'TEST-KEY-ID',
-				getAuthProvider().JWT_SUBJECT_FIELD_NAME			=> '[SUBJECT]',
-				getAuthProvider().JWT_ISSUER_FIELD_NAME				=> '[ISSUER]',
-				getAuthProvider().JWT_AUDIENCE_FIELD_NAME			=> '[AUDIENCE]',
-				getAuthProvider().AUTH_PROVIDER_NAME_FIELD_NAME		=> 'TestAuthProvider',
-				getAuthProvider().JWS_SIGNING_CERT_FIELD_NAME		=> 'certName',
-				getAuthProvider().JWS_SIGNING_ALGORITHM_FIELD_NAME	=> 'RSA-SHA512'
-			};
-		}
-		return authProviderConfig;
-	}
+    /**
+     * @description Method to test the getCustomMetadataType() function
+     */
+    @IsTest
+    static void testGetCustomMetadataType(){
+        // Assert test results
+        System.assertEquals(
+            String.valueOf(OAuth_JWT_Client_Authentication__mdt.getSObjectType()),
+            getAuthProvider().getCustomMetadataType(),
+            'Unexpected custom metadata value'
+        );
+    }
 
 
-	/** **************************************************************************************************** **
-	 **                                         PRIVATE MOCK CLASSES                                         **
-	 ** **************************************************************************************************** **/
-	private class MockTokenResponse implements HttpCalloutMock { 
-		public HttpResponse respond(HTTPRequest req) { 
-			
-			OAuthJwtClientCredentials.TokenResponse tokenResponse = new OAuthJwtClientCredentials.TokenResponse();
-			tokenResponse.access_token 	= 'access_token_value';
-			tokenResponse.token_type	= 'Bearer';
-			tokenResponse.expires_in	= '1682439225';
+    /**
+     * @description Method to test the generateHttpRequest() function
+     */
+    @IsTest
+    static void testGenerateHttpRequest(){
+        
+        // Test the http request is generated correcty
+        Test.startTest();
+        HttpRequest httpRequest = getAuthProvider().generateHttpRequest(getAuthProviderConfig(),'{}');
+        Test.stopTest();
+        
+        // Assert test results for custom headers
+        System.assertEquals('[TEST_KEY]',    httpRequest.getHeader('apiKey'),'Expected header "apiKey" does not exist');
+        System.assertEquals('[API_ID]',        httpRequest.getHeader('apiId'),    'Expected header "apiId" does not exist');
+        
+        // assert result for the endpoint
+        System.assertEquals(
+            getAuthProviderConfig().get(OAuthJwtClientCredentials.TOKEN_ENDPOINT_FIELD_NAME),
+            httpRequest.getEndpoint(),
+            'Unexpected endpoint'
+        );
+    }
 
-			HttpResponse httpResponse = new HttpResponse();
-			httpResponse.setStatusCode(200);
-			httpResponse.setBody(JSON.serializePretty(tokenResponse));
 
-			return httpResponse;
-		}
-	}
+    /**
+     * @description Method to test the validateJwsHeaderAlgorithm() function
+     */
+    @IsTest
+    static void testValidateJwsHeaderAlgorithm(){
+        // Happy path
+        System.assertEquals('RS512', getAuthProvider().validateJwsHeaderAlgorithm('RS512'), 'Unexpected algorithm');
+
+        // Exception path
+        try {
+            getAuthProvider().validateJwsHeaderAlgorithm('invalid');
+        }catch(OAuthJwtClientCredentials.JwsException e){
+            System.assertEquals(
+                OAuthJwtClientCredentials.JWS_INVALID_HEAD_ALG_EXCEPTION_MSG,
+                e.getMessage(),
+                'Unexpected exception message'
+            );
+        }
+    }
+
+
+    /**
+     * @description Method to test the validateJwsHeaderAlgorithm() function
+     */
+    @IsTest
+    static void testValidateJwsSigningAlgorithm(){
+        // Happy path
+        System.assertEquals('RSA-SHA512', getAuthProvider().validateJwsSigningAlgorithm('RSA-SHA512'), 'Unexpected algorithm');
+
+        // Exception path
+        try {
+            getAuthProvider().validateJwsSigningAlgorithm('invalid');
+        }catch(OAuthJwtClientCredentials.JwsException e){
+            System.assertEquals(
+                OAuthJwtClientCredentials.JWS_INVALID_SIGN_ALG_EXCEPTION_MSG,
+                e.getMessage(),
+                'Unexpected exception message'
+            );
+        }
+    }
+    
+
+    /** **************************************************************************************************** **
+     **                                      PRIVATE TEST DATA METHODS                                       **
+     ** **************************************************************************************************** **/
+    /**
+     * @description Method that return a mock token response
+     * @return      Mock token reponse
+     */
+    private static Auth.AuthProviderTokenResponse getTokenResponse(){
+        return getAuthProvider().handleCallback(
+            getAuthProviderConfig(),
+            new Auth.AuthProviderCallbackState(
+                null,
+                null,
+                new Map<String,String>{
+                    'code' => 'NoCodeRequiredButMandatory',
+                    'state'=> 'TestState'
+                }
+            )
+        );
+    }
+
+
+    /**
+     * @description Method to create a Auth Provider (OAuthJwtClientCredentials) class instance that is
+     *              used for testing
+     * @return      Class representing the Auth Provider
+     */
+    private static OAuthJwtClientCredentials getAuthProvider(){
+        if(authProvider == null){
+            authProvider = new OAuthJwtClientCredentials();
+        }
+        return authProvider;
+    }
+
+
+    /**
+     * @description Method to generate the Auth Provider Config data that is used for testing
+     * @return      The auth provider configuration data map
+     */
+    private static Map<String,String> getAuthProviderConfig(){
+        if(authProviderConfig == null){
+            authProviderConfig=  new Map<String,String>{
+                OAuthJwtClientCredentials.SCOPE_FIELD_NAME                  => 'web,api',
+                OAuthJwtClientCredentials.TOKEN_ENDPOINT_FIELD_NAME         => 'https://localhost/oauth/token',
+                OAuthJwtClientCredentials.TOKEN_HEADERS_FIELD_NAME          => 'apiKey : [TEST_KEY], apiId : [API_ID]',
+                OAuthJwtClientCredentials.JWT_ALGORITHM_FIELD_NAME          => 'RS512',
+                OAuthJwtClientCredentials.JWT_KID_FIELD_NAME                => 'TEST-KEY-ID',
+                OAuthJwtClientCredentials.JWT_SUBJECT_FIELD_NAME            => '[SUBJECT]',
+                OAuthJwtClientCredentials.JWT_ISSUER_FIELD_NAME             => '[ISSUER]',
+                OAuthJwtClientCredentials.JWT_AUDIENCE_FIELD_NAME           => '[AUDIENCE]',
+                OAuthJwtClientCredentials.AUTH_PROVIDER_NAME_FIELD_NAME     => 'TestAuthProvider',
+                OAuthJwtClientCredentials.JWS_SIGNING_CERT_FIELD_NAME       => 'certName',
+                OAuthJwtClientCredentials.JWS_SIGNING_ALGORITHM_FIELD_NAME  => 'RSA-SHA512'
+            };
+        }
+        return authProviderConfig;
+    }
+
+
+    /** **************************************************************************************************** **
+     **                                         PRIVATE MOCK CLASSES                                         **
+     ** **************************************************************************************************** **/
+    /**
+     * @description Class for testing the OAuthJwtClientAuthentication Methods
+     */
+     private class MockTokenResponse implements HttpCalloutMock { 
+        
+        /**
+         * @description Method to generate the mock token response
+         * @param       httpRequest The HttpRequest object to add the header values to
+         * @return      The mocked HttpResponse (Token)
+         */
+        public HttpResponse respond(HttpRequest httpRequest) { 
+            
+            OAuthJwtClientCredentials.TokenResponse tokenResponse = new OAuthJwtClientCredentials.TokenResponse();
+            tokenResponse.access_token  = 'access_token_value';
+            tokenResponse.token_type    = 'Bearer';
+            tokenResponse.expires_in    = '1682439225';
+
+            HttpResponse httpResponse = new HttpResponse();
+            httpResponse.setStatusCode(200);
+            httpResponse.setBody(JSON.serializePretty(tokenResponse));
+
+            return httpResponse;
+        }
+    }
 }

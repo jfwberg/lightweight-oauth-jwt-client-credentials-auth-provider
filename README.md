@@ -3,6 +3,9 @@
 A reusable Auth Provider that can be used with named / external credentials that executes an OAuth 2.0 JWT Client Authentication flow using a Client Credentials grant type.
 The grant type standards are described in https://datatracker.ietf.org/doc/html/rfc7523#section-2.2
 
+## Blog details
+https://medium.com/@justusvandenberg/oauth-2-0-jwt-client-credentials-authentication-auth-d269835baae2
+
 ## Important
 - Security is no easy subject: Before implementing this (or any) solution, always validate what you're doing with a certified sercurity expert and your certified implementation partner
 - At the time of writing I work for Salesforce. The views / solutions presented here are strictly MY OWN and NOT per definition the views or solutions Salesforce would recommend. Again; always consult with your certified implementation partner before implementing anything.

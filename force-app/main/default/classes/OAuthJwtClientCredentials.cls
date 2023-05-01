@@ -9,9 +9,9 @@
  */
 public with sharing class OAuthJwtClientCredentials extends Auth.AuthProviderPluginClass{
 
-	/** **************************************************************************************************** **
-	 **                                          PRIVATE CONSTANTS                                           **
-	 ** **************************************************************************************************** **/
+    /** **************************************************************************************************** **
+     **                                          PRIVATE CONSTANTS                                           **
+     ** **************************************************************************************************** **/
     // Grant details
     @TestVisible private final static String SCOPE_FIELD_NAME          = String.valueOf(OAuth_JWT_Client_Authentication__mdt.Scope__c);
     @TestVisible private final static String TOKEN_ENDPOINT_FIELD_NAME = String.valueOf(OAuth_JWT_Client_Authentication__mdt.Token_Endpoint_URL__c);
@@ -42,9 +42,9 @@ public with sharing class OAuthJwtClientCredentials extends Auth.AuthProviderPlu
     @TestVisible private final static Set<String> VALID_JWS_SIGNING_ALGORITHMS = new Set<String>{'RSA-SHA256','RSA-SHA384','RSA-SHA512','ECDSA-SHA256','ECDSA-SHA384','ECDSA-SHA512'};
     
     // Any messages go here
-    @TestVisible private final static String INVALID_TOKEN_RESPONSE_MSG            = 'Unexpected response when calling the token endpoint: {0}';
-    @TestVisible private final static String JWS_INVALID_HEAD_ALG_EXCEPTION_MSG    = 'Invalid JWS Header Algorithm provided. Valid values are: \'RS256\',\'RS384\',\'RS512\',\'ES256\',\'ES384\' and \'ES512\'';
-    @TestVisible private final static String JWS_INVALID_SIGN_ALG_EXCEPTION_MSG    = 'Invalid JWS Signing Algorithm provided. Valid values are: \'RSA-SHA256\',\'RSA-SHA384\',\'RSA-SHA512\',\'ECDSA-SHA256\',\'ECDSA-SHA384\',\'ECDSA-SHA512\'';
+    @TestVisible private final static String INVALID_TOKEN_RESPONSE_MSG        = 'Unexpected response when calling the token endpoint: {0}';
+    @TestVisible private final static String JWS_INVALID_HEAD_ALG_EXCEPTION_MSG= 'Invalid JWS Header Algorithm provided. Valid values are: \'RS256\',\'RS384\',\'RS512\',\'ES256\',\'ES384\' and \'ES512\'';
+    @TestVisible private final static String JWS_INVALID_SIGN_ALG_EXCEPTION_MSG= 'Invalid JWS Signing Algorithm provided. Valid values are: \'RSA-SHA256\',\'RSA-SHA384\',\'RSA-SHA512\',\'ECDSA-SHA256\',\'ECDSA-SHA384\',\'ECDSA-SHA512\'';
     
     
 

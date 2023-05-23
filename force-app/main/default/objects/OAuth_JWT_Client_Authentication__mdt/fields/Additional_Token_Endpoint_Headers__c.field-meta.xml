@@ -3,9 +3,10 @@
     <fullName>Additional_Token_Endpoint_Headers__c</fullName>
     <externalId>false</externalId>
     <fieldManageability>DeveloperControlled</fieldManageability>
-    <inlineHelpText>Addtional headers to add to the token endpoint. Each header should go on its own line and be separated with a colon. I.E. &quot;apiKey : value&quot;</inlineHelpText>
+    <inlineHelpText>Addtional headers to add to the token endpoint.
+Each value pair needs to be comma separated and and split by a colon. . I.E. &quot;apiKey : value, clientId : ab-cd-ef&quot;</inlineHelpText>
     <label>Additional Token Endpoint Headers</label>
-    <length>32768</length>
+    <length>25000</length>
     <type>LongTextArea</type>
     <visibleLines>3</visibleLines>
 </CustomField>

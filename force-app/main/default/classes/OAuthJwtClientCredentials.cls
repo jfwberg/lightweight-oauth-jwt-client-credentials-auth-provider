@@ -7,7 +7,22 @@
  *              Follows the standard as described in 
  *              https://datatracker.ietf.org/doc/html/rfc7523#section-2.2
  */
+
+
+// update  the headers in the main tool
+// additional Params + test classes
+// User mapping implementation + testing
+
+
 public with sharing class OAuthJwtClientCredentials extends Auth.AuthProviderPluginClass{
+
+    /** **************************************************************************************************** **
+     **                                          PRIVATE VARIABLES                                           **
+     ** **************************************************************************************************** **/
+    // The optional auth provider util for error logging and per user mode (requires the "Lightweight - Auth Provider Util v2" package)
+    // If you dont want this depencency, disable the options "Enable Error Logging", "Per User Mode" and "Per User Login Logging Enabled" in the Custom Auth Provider Setup.
+    private static Callable authProviderUtil;
+
 
     /** **************************************************************************************************** **
      **                                          PRIVATE CONSTANTS                                           **
@@ -16,6 +31,7 @@ public with sharing class OAuthJwtClientCredentials extends Auth.AuthProviderPlu
     @TestVisible private final static String SCOPE_FIELD_NAME          = String.valueOf(OAuth_JWT_Client_Authentication__mdt.Scope__c);
     @TestVisible private final static String TOKEN_ENDPOINT_FIELD_NAME = String.valueOf(OAuth_JWT_Client_Authentication__mdt.Token_Endpoint_URL__c);
     @TestVisible private final static String TOKEN_HEADERS_FIELD_NAME  = String.valueOf(OAuth_JWT_Client_Authentication__mdt.Additional_Token_Endpoint_Headers__c);
+    @TestVisible private final static String TOKEN_PARAMS_FIELD_NAME   = String.valueOf(OAuth_JWT_Client_Authentication__mdt.Additional_Token_Endpoint_Parameters__c);
     @TestVisible private final static String CUSTOM_CALLBACK_FIELD_NAME= String.valueOf(OAuth_JWT_Client_Authentication__mdt.Custom_Callback_URL__c);
 
     // JWT Header info
@@ -28,11 +44,19 @@ public with sharing class OAuthJwtClientCredentials extends Auth.AuthProviderPlu
     @TestVisible private final static String JWT_AUDIENCE_FIELD_NAME   = String.valueOf(OAuth_JWT_Client_Authentication__mdt.JWT_Audience__c);
     
     // Specify the name for your auth provider for the callback URL
-    @TestVisible private final static String AUTH_PROVIDER_NAME_FIELD_NAME     = String.valueOf(OAuth_JWT_Client_Authentication__mdt.Auth_Provider_Name__c);
+    @TestVisible private final static String AUTH_PROVIDER_NAME_FIELD_NAME    = String.valueOf(OAuth_JWT_Client_Authentication__mdt.Auth_Provider_Name__c);
 
     // The API name of the certificate and the algorithm used for signing the JWT
-    @TestVisible private final static String JWS_SIGNING_CERT_FIELD_NAME       = String.valueOf(OAuth_JWT_Client_Authentication__mdt.JWT_Signing_Certificate_Name__c);
-    @TestVisible private final static String JWS_SIGNING_ALGORITHM_FIELD_NAME  = String.valueOf(OAuth_JWT_Client_Authentication__mdt.JWT_Signing_Algorithm__c);
+    @TestVisible private final static String JWS_SIGNING_CERT_FIELD_NAME      = String.valueOf(OAuth_JWT_Client_Authentication__mdt.JWT_Signing_Certificate_Name__c);
+    @TestVisible private final static String JWS_SIGNING_ALGORITHM_FIELD_NAME = String.valueOf(OAuth_JWT_Client_Authentication__mdt.JWT_Signing_Algorithm__c);
+    
+    // Setup switches
+    @TestVisible private final static String PER_USER_MODE_FIELD_NAME         = String.valueOf(OAuth_JWT_Client_Authentication__mdt.Per_User_Mode__c);
+    @TestVisible private final static String ERROR_LOGGING_ENABLED_FIELD_NAME = String.valueOf(OAuth_JWT_Client_Authentication__mdt.Enable_Error_Logging__c);
+    @TestVisible private final static String LOGIN_LOGGING_ENABLED_FIELD_NAME = String.valueOf(OAuth_JWT_Client_Authentication__mdt.Per_User_Login_Logging_Enabled__c);
+
+    // This will generate the GUID that is used to identify this specific transaction so it can be followed through the logs
+    @TestVisible private final static String GUID = generateGUID();
 
     // Parameter names
     @TestVisible private final static String PARAM_NAME_STATE = 'state';
@@ -42,10 +66,12 @@ public with sharing class OAuthJwtClientCredentials extends Auth.AuthProviderPlu
     @TestVisible private final static Set<String> VALID_JWS_SIGNING_ALGORITHMS = new Set<String>{'RSA-SHA256','RSA-SHA384','RSA-SHA512','ECDSA-SHA256','ECDSA-SHA384','ECDSA-SHA512'};
     
     // Any messages go here
+    @TestVisible private final static String GENERIC_EXCEPTION_MSG             = 'A {0} was thrown with the message: {1}';
+    @TestVisible private final static String NO_USER_MAPPING_MSG               = 'Nu User Mapping Record was found for Auth Proivder "{0}" with user "{1}"';    
+    @TestVisible private final static String MISSING_UTIL_PACKAGE_MSG          = 'Issue whilst instantiating the AuthProviderUtil class. Make sure the "Lightweight - Auth Provider Util v2" package is installed. Alternatively, disable the options "Enable Error Logging", "Per User Mode" and "Per User Login Logging Enabled" in the Custom Auth Provider Setup.';
     @TestVisible private final static String INVALID_TOKEN_RESPONSE_MSG        = 'Unexpected response when calling the token endpoint: {0}';
     @TestVisible private final static String JWS_INVALID_HEAD_ALG_EXCEPTION_MSG= 'Invalid JWS Header Algorithm provided. Valid values are: \'RS256\',\'RS384\',\'RS512\',\'ES256\',\'ES384\' and \'ES512\'';
     @TestVisible private final static String JWS_INVALID_SIGN_ALG_EXCEPTION_MSG= 'Invalid JWS Signing Algorithm provided. Valid values are: \'RSA-SHA256\',\'RSA-SHA384\',\'RSA-SHA512\',\'ECDSA-SHA256\',\'ECDSA-SHA384\',\'ECDSA-SHA512\'';
-    
     
 
     /** **************************************************************************************************** **
@@ -92,17 +118,27 @@ public with sharing class OAuthJwtClientCredentials extends Auth.AuthProviderPlu
     public Auth.AuthProviderTokenResponse handleCallback(Map<String,String> authProviderConfiguration, Auth.AuthProviderCallbackState callbackState){
         
         // Retrieve a new token from the token endpoint
-        TokenResponse tokenResponse = this.retrieveToken(authProviderConfiguration);
-        
-        // Return the the token response, there is no refresh token so we just set a random value
-        return new Auth.AuthProviderTokenResponse(
-            authProviderConfiguration.get(AUTH_PROVIDER_NAME_FIELD_NAME)?.trim(),
-            tokenResponse.access_token,
-            'NoRefreshTokenInThisOAuthFlow',
-            callbackState.queryParameters.get(PARAM_NAME_STATE)
-        ); 
+        TokenResponse tokenResponse;
+
+        try{
+            // Retrieve a new token from the token endpoint
+            tokenResponse = this.retrieveToken(authProviderConfiguration);
+
+            // Return the the token response, there is no refresh token so we just set a random value
+            return new Auth.AuthProviderTokenResponse(
+                authProviderConfiguration.get(AUTH_PROVIDER_NAME_FIELD_NAME)?.trim(),
+                tokenResponse.access_token,
+                'NoRefreshTokenInThisOAuthFlow',
+                callbackState.queryParameters.get(PARAM_NAME_STATE)
+            ); 
+        }catch(Exception e){
+            handleException(e, authProviderConfiguration);
+        }
+
+        // Unreachable statement to please the apex compiler
+        return null;
     }
-    
+
 
     /**
      * @description Returns a new access token, which is used to update an expired access token.
@@ -115,15 +151,21 @@ public with sharing class OAuthJwtClientCredentials extends Auth.AuthProviderPlu
      *              just ignore this value or put in a random, invalid value.
      */
     public override Auth.OAuthRefreshResult refresh(Map<String,String> authProviderConfiguration, String refreshToken){
-        
-        // Retrieve a new token from the token endpoint
-        TokenResponse response = this.retrieveToken(authProviderConfiguration);
-        
-        // Return the (refresh) token response
-        return new Auth.OAuthRefreshResult(
-            response.access_token,
-            response.token_type
-        );
+        try{
+            // Retrieve a new token from the token endpoint
+            TokenResponse response = this.retrieveToken(authProviderConfiguration);
+            
+            // Return the (refresh) token response
+            return new Auth.OAuthRefreshResult(
+                response.access_token,
+                response.token_type
+            );
+        }catch(Exception e){
+            handleException(e, authProviderConfiguration);
+        }
+
+        // Unreachable statement to please the apex compiler
+        return null;
     }
 
 
@@ -266,10 +308,23 @@ public with sharing class OAuthJwtClientCredentials extends Auth.AuthProviderPlu
 
         // Check the status is as expexted or throw an exception
         if(httpResponse.getStatusCode() != 200){
+            
+            // Throw an exception
             throw new TokenException(String.format(
                 INVALID_TOKEN_RESPONSE_MSG,
                 new String[]{httpResponse.getBody()}
             ));
+        }
+
+        // Check if the per user mode is enabled, if so update the log entry for that user mapping
+        if( Boolean.valueOf(authProviderConfiguration.get(PER_USER_MODE_FIELD_NAME)) &&
+            Boolean.valueOf(authProviderConfiguration.get(LOGIN_LOGGING_ENABLED_FIELD_NAME))){
+            
+            // Update the mapping record    
+            getAuthProviderUtil().call('updateMappingLoginDetails', new Map<String, Object> { 
+                'authProviderName' => authProviderConfiguration.get(AUTH_PROVIDER_NAME_FIELD_NAME)?.trim(),
+                'userId'           => UserInfo.getUserId()
+            });
         }
 
         // Parse the response into a token response
@@ -300,9 +355,9 @@ public with sharing class OAuthJwtClientCredentials extends Auth.AuthProviderPlu
         String payload = JSON.serialize(new Map<String,Object>{
             'iss' => authProviderConfiguration.get(JWT_ISSUER_FIELD_NAME)?.trim(),
             'aud' => authProviderConfiguration.get(JWT_AUDIENCE_FIELD_NAME)?.trim(),
-            'sub' => authProviderConfiguration.get(JWT_SUBJECT_FIELD_NAME)?.trim(),
+            'sub' => getSubject(authProviderConfiguration),
             'exp' => (DateTime.now().addSeconds(300).getTime() / 1000),
-            'jti' => this.generateGUID()
+            'jti' => GUID
         });        
         
         // Encode and combine the header and body for signing
@@ -351,7 +406,7 @@ public with sharing class OAuthJwtClientCredentials extends Auth.AuthProviderPlu
      *              attacks.
      * @return      V4 UUID (GUID)
      */
-    private String generateGUID(){
+    private static String generateGUID(){
         String randomHexString = EncodingUtil.convertToHex(Crypto.generateAESKey(256));
         return String.join(new String[]{
             randomHexString.substring(0,8),
@@ -466,6 +521,90 @@ public with sharing class OAuthJwtClientCredentials extends Auth.AuthProviderPlu
     }
 
 
+    /**
+     * @description Method that logs an exception and transforms any exception type into a
+     *              GenericException
+     * @param       e                The exception that is thrown and needs to be handled
+     * @throws      GenericException Always
+     */
+    private void handleException(Exception e, Map<String,String> authProviderConfiguration){
+        
+        // Generate a generic exception message for the error handling and to be thrown to the user
+        String exceptionMessage = String.format(GENERIC_EXCEPTION_MSG, new String[]{e.getTypeName(), e.getMessage()});
+        
+        // If logging is enabled use the "Lightweight - Auth Provider Util v2" method to insert an error log
+        // This does mean a dependency with a different package, simply remove this code if you don't
+        // want to install the dependency      
+        if(Boolean.valueOf(authProviderConfiguration.get(ERROR_LOGGING_ENABLED_FIELD_NAME))){
+            
+            getAuthProviderUtil().call('insertLog', new Map<String, Object> { 
+                'authProviderName' => authProviderConfiguration.get(AUTH_PROVIDER_NAME_FIELD_NAME)?.trim(),
+                'userId'           => UserInfo.getUserId(),
+                'logId'            => GUID,
+                'message'          => exceptionMessage
+            });
+        }
+        
+        // Throw the new generic exception to the user#
+        throw new GenericException(exceptionMessage);
+    }
+
+
+    /**
+     * Method to Switch the mapped subject between per User Mode and Named Principal Mode
+     * If per User Mode is enabled use the "Lightweight - Auth Provider Util" method and populate the 
+     * mapping fields for each user  that is allowed to get a token.
+     */
+    private static String getSubject(Map<String,String> authProviderConfiguration){
+        
+        // Check if the per user mode is enabled
+        if(Boolean.valueOf(authProviderConfiguration.get(PER_USER_MODE_FIELD_NAME))){
+            
+			
+            // If no user mapping exists throw an error
+            if(! (Boolean) getAuthProviderUtil().call('checkUserMappingExists', new Map<String, Object> { 
+                'authProviderName' => authProviderConfiguration.get(AUTH_PROVIDER_NAME_FIELD_NAME)?.trim(),
+                'userId'           => UserInfo.getUserId()
+            })){
+                throw new SubjectException(
+                    String.format(
+                        NO_USER_MAPPING_MSG,
+                        new String[]{authProviderConfiguration.get(AUTH_PROVIDER_NAME_FIELD_NAME) , UserInfo.getUserId()}
+                    )
+                );
+            }
+
+            // Return the subject from the user mapping record related to this user and auth provider
+            return (String) getAuthProviderUtil().call('getSubjectFromUserMapping', new Map<String, Object> { 
+                'authProviderName' => authProviderConfiguration.get(AUTH_PROVIDER_NAME_FIELD_NAME)?.trim(),
+                'userId'           => UserInfo.getUserId()
+            });
+        }
+        
+        // By default return the NamedPrincipal
+        return authProviderConfiguration.get(JWT_SUBJECT_FIELD_NAME)?.trim();
+    }
+
+    
+
+
+    private static Callable getAuthProviderUtil(){
+        
+        // Lazy loading
+        if(authProviderUtil == null){
+            
+            // Dymaically instatiate class 
+            authProviderUtil = (Callable) Type.forName('lwt.AuthProviderUtil')?.newInstance();
+            
+            // Throw an error if the package is not installed
+            if(authProviderUtil == null){
+                throw new GenericException(MISSING_UTIL_PACKAGE_MSG);
+            }
+        }
+        return authProviderUtil;
+    }
+
+
     /** **************************************************************************************************** **
      **                                      PRIVATE EXCEPTION CLASSES                                       **
      ** **************************************************************************************************** **/
@@ -481,6 +620,19 @@ public with sharing class OAuthJwtClientCredentials extends Auth.AuthProviderPlu
      */
     @TestVisible
     private class TokenException    extends Exception{}
+
+     /**
+     * @description Custom Exception thrown when there is an issue related the subject
+     */
+    @TestVisible
+    private class SubjectException    extends Exception{}
+
+
+    /**
+     * @description Custom Exception thrown when there is an issue generating the token.
+     */
+    @TestVisible
+    private class GenericException    extends Exception{}
 
 
     /** **************************************************************************************************** **

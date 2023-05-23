@@ -1,5 +1,27 @@
 {
-  "orgName": "Demo company",
-  "edition": "Developer",
-  "features": []
+	"orgName": "Ligthweight - OAuth 2.0 JWT Client Credentials Auth Provider - Dev Scratch Org",
+	"edition": "Developer",
+	"features": [
+		"EnableSetPasswordInApi"
+	],
+	"language": "en_US",
+	"country": "GB",
+	"settings": {
+		"lightningExperienceSettings": {
+			"enableS1DesktopEnabled": true
+		},
+		"mobileSettings": {
+			"enableS1EncryptedStoragePref2": false
+		},
+		"securitySettings": {
+			"sessionSettings": {
+				"sessionTimeout": "TwentyFourHours",
+				"lockerServiceNext" : true
+			},
+			"passwordPolicies": {
+				"expiration": "Never",
+				"historyRestriction": "0"
+			}
+		}
+	}
 }

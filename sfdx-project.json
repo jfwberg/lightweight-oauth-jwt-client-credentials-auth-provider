@@ -2,28 +2,24 @@
   "packageDirectories": [
     {
       "path": "force-app",
-      "default": false,
-      "package": "OAuth 2.0 JWT Client Credentials Authentication Auth Provider",
+      "default": true,
+      "package": "Lightweight - OAuth 2.0 JWT Client Credentials Auth Provider",
       "versionName": "ver 0.1",
       "versionNumber": "0.1.0.NEXT",
-      "versionDescription": "A generic Auth Provider Apex class that can be used with named/external credentials to get an access token using the OAuth 2.0 JWT Client Credentials Authentication Flow."
+      "versionDescription": "A lightweight generic Auth Provider Apex class that can be used with named/external credentials to get an access token using the OAuth 2.0 JWT Client Credentials Authentication Flow."
     },
     {
       "path": "force-demo-data",
-      "default": true,
-      "package": "OAuth 2.0 JWT Client Credentials Authentication Auth Provider - Demo Data",
+      "default": false,
+      "package": "Lightweight - OAuth 2.0 JWT Client Credentials Auth Provider - Demo Data",
       "versionName": "0.1",
       "versionNumber": "0.1.0.NEXT",
       "versionDescription": "This is a test data package to simply illustrate what the metadata would look like. API Keys and values are obfuscated here, but is should give a good idea. (PRIVATE USE ONLY)"
     }
   ],
-  "name": "oauth-jwt-client-credentials-authentication-auth-provider",
-  "namespace": "utl",
+  "name": "lightweight-oauth-jwt-client-credentials-auth-provider",
+  "namespace": "lwt",
   "sfdcLoginUrl": "https://login.salesforce.com",
   "sourceApiVersion": "57.0",
-  "packageAliases": {
-    "OAuth 2.0 JWT Client Credentials Authentication Auth Provider": "0Ho6S000000CaSUSA0",
-    "OAuth 2.0 JWT Client Credentials Authentication Auth Provider@0.1.0-1": "04t6S000001EAT6QAO",
-    "OAuth 2.0 JWT Client Credentials Authentication Auth Provider@0.1.0-2": "04t6S000001EATBQA4"
-  }
+  "packageAliases": {}
 }

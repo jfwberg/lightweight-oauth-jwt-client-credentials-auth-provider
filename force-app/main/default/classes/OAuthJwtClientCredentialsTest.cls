@@ -225,6 +225,7 @@ private with sharing class OAuthJwtClientCredentialsTest {
                 OAuthJwtClientCredentials.SCOPE_FIELD_NAME                  => 'web,api',
                 OAuthJwtClientCredentials.TOKEN_ENDPOINT_FIELD_NAME         => 'https://localhost/oauth/token',
                 OAuthJwtClientCredentials.TOKEN_HEADERS_FIELD_NAME          => 'apiKey : [TEST_KEY], apiId : [API_ID]',
+				OAuthJwtClientCredentials.TOKEN_PARAMS_FIELD_NAME           => 'tenant : [TENANT], client_id : [CLIENT_ID]',
                 OAuthJwtClientCredentials.JWT_ALGORITHM_FIELD_NAME          => 'RS512',
                 OAuthJwtClientCredentials.JWT_KID_FIELD_NAME                => 'TEST-KEY-ID',
                 OAuthJwtClientCredentials.JWT_SUBJECT_FIELD_NAME            => '[SUBJECT]',
@@ -232,7 +233,11 @@ private with sharing class OAuthJwtClientCredentialsTest {
                 OAuthJwtClientCredentials.JWT_AUDIENCE_FIELD_NAME           => '[AUDIENCE]',
                 OAuthJwtClientCredentials.AUTH_PROVIDER_NAME_FIELD_NAME     => 'TestAuthProvider',
                 OAuthJwtClientCredentials.JWS_SIGNING_CERT_FIELD_NAME       => 'certName',
-                OAuthJwtClientCredentials.JWS_SIGNING_ALGORITHM_FIELD_NAME  => 'RSA-SHA512'
+                OAuthJwtClientCredentials.JWS_SIGNING_ALGORITHM_FIELD_NAME  => 'RSA-SHA512',
+				OAuthJwtClientCredentials.PER_USER_MODE_FIELD_NAME          => 'false',
+				OAuthJwtClientCredentials.ERROR_LOGGING_ENABLED_FIELD_NAME  => 'true',
+				OAuthJwtClientCredentials.LOGIN_LOGGING_ENABLED_FIELD_NAME  => 'true'
+				
             };
         }
         return authProviderConfig;

@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Additional_Token_Endpoint_Parameters__c</fullName>
+    <externalId>false</externalId>
+    <fieldManageability>DeveloperControlled</fieldManageability>
+    <inlineHelpText>Addtional params to add to the token endpoint in the POST body.
+Each value pair needs to be comma separated and and split by a colon. I.E. &quot;tenant : ab-cd-ef, client_id : qr-st-uv&quot;</inlineHelpText>
+    <label>Additional Token Endpoint Parameters</label>
+    <length>25000</length>
+    <type>LongTextArea</type>
+    <visibleLines>3</visibleLines>
+</CustomField>

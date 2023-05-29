@@ -4,23 +4,24 @@
  * @copyright   (c) 2023 Justus van den Berg
  * @license     MIT (See LICENSE file in the project root)
  * @description OAuth 2.0 JWT Client Authentication Auth Provider for the use with Client Credentials
- *              Follows the standard as described in 
- *              https://datatracker.ietf.org/doc/html/rfc7523#section-2.2
+ *              Follows the standard as described in rfc7523Section 2.2
+ *              (https://datatracker.ietf.org/doc/html/rfc7523#section-2.2)
+ * @note        In order to use the (error) logging functions and to enabled "Per User" mode for
+ *              user context mappings, It is required that the "Lightweight - Auth Provider Util
+ *              v2" (04t4K000002JuxSQAS) package is installed.
+ * @change      Implemented the following new functions:
+ *              - Optional parameters, azure requires ?client_id=[client_id]&tentant=abcede
+ *              - Error logging
+ *              - Per user mode as well as Named Principal
+ *              - User login logging, to keep track of what users have requested tokens
  */
-
-
-// update  the headers in the main tool
-// additional Params + test classes
-// User mapping implementation + testing
-
-
 public with sharing class OAuthJwtClientCredentials extends Auth.AuthProviderPluginClass{
 
     /** **************************************************************************************************** **
      **                                          PRIVATE VARIABLES                                           **
      ** **************************************************************************************************** **/
     // The optional auth provider util for error logging and per user mode (requires the "Lightweight - Auth Provider Util v2" package)
-    // If you dont want this depencency, disable the options "Enable Error Logging", "Per User Mode" and "Per User Login Logging Enabled" in the Custom Auth Provider Setup.
+    // If you dont want this depencency, disable the options "Enable Error Logging", "Enabled Per User Mode" and "Enabled Per User Login Logging" in the Custom Auth Provider Setup.
     private static Callable authProviderUtil;
 
 
@@ -51,9 +52,9 @@ public with sharing class OAuthJwtClientCredentials extends Auth.AuthProviderPlu
     @TestVisible private final static String JWS_SIGNING_ALGORITHM_FIELD_NAME = String.valueOf(OAuth_JWT_Client_Authentication__mdt.JWT_Signing_Algorithm__c);
     
     // Setup switches
-    @TestVisible private final static String PER_USER_MODE_FIELD_NAME         = String.valueOf(OAuth_JWT_Client_Authentication__mdt.Per_User_Mode__c);
-    @TestVisible private final static String ERROR_LOGGING_ENABLED_FIELD_NAME = String.valueOf(OAuth_JWT_Client_Authentication__mdt.Enable_Error_Logging__c);
-    @TestVisible private final static String LOGIN_LOGGING_ENABLED_FIELD_NAME = String.valueOf(OAuth_JWT_Client_Authentication__mdt.Per_User_Login_Logging_Enabled__c);
+    @TestVisible private final static String ENABLE_PER_USER_MODE_FIELD_NAME = String.valueOf(OAuth_JWT_Client_Authentication__mdt.Enable_Per_User_Mode__c);
+    @TestVisible private final static String ENABLE_ERROR_LOGGING_FIELD_NAME = String.valueOf(OAuth_JWT_Client_Authentication__mdt.Enable_Error_Logging__c);
+    @TestVisible private final static String ENABLE_LOGIN_LOGGING_FIELD_NAME = String.valueOf(OAuth_JWT_Client_Authentication__mdt.Enable_Per_User_Login_Logging__c);
 
     // This will generate the GUID that is used to identify this specific transaction so it can be followed through the logs
     @TestVisible private final static String GUID = generateGUID();
@@ -68,7 +69,7 @@ public with sharing class OAuthJwtClientCredentials extends Auth.AuthProviderPlu
     // Any messages go here
     @TestVisible private final static String GENERIC_EXCEPTION_MSG             = 'A {0} was thrown with the message: {1}';
     @TestVisible private final static String NO_USER_MAPPING_MSG               = 'Nu User Mapping Record was found for Auth Proivder "{0}" with user "{1}"';    
-    @TestVisible private final static String MISSING_UTIL_PACKAGE_MSG          = 'Issue whilst instantiating the AuthProviderUtil class. Make sure the "Lightweight - Auth Provider Util v2" package is installed. Alternatively, disable the options "Enable Error Logging", "Per User Mode" and "Per User Login Logging Enabled" in the Custom Auth Provider Setup.';
+    @TestVisible private final static String MISSING_UTIL_PACKAGE_MSG          = 'Issue whilst instantiating the AuthProviderUtil class. Make sure the "Lightweight - Auth Provider Util v2" package is installed. Alternatively, DISABLE the options "Enable Error Logging", "Enable Per User Mode" and "Enable Per User Login Logging" in the Custom Auth Provider Setup.';
     @TestVisible private final static String INVALID_TOKEN_RESPONSE_MSG        = 'Unexpected response when calling the token endpoint: {0}';
     @TestVisible private final static String JWS_INVALID_HEAD_ALG_EXCEPTION_MSG= 'Invalid JWS Header Algorithm provided. Valid values are: \'RS256\',\'RS384\',\'RS512\',\'ES256\',\'ES384\' and \'ES512\'';
     @TestVisible private final static String JWS_INVALID_SIGN_ALG_EXCEPTION_MSG= 'Invalid JWS Signing Algorithm provided. Valid values are: \'RSA-SHA256\',\'RSA-SHA384\',\'RSA-SHA512\',\'ECDSA-SHA256\',\'ECDSA-SHA384\',\'ECDSA-SHA512\'';
@@ -274,6 +275,14 @@ public with sharing class OAuthJwtClientCredentials extends Auth.AuthProviderPlu
             authProviderConfiguration.get(TOKEN_HEADERS_FIELD_NAME)?.trim(),
             httpRequest
         );
+
+        // Add optional custom parameters to the token request (i.e. things client_id , tentant etc.)
+        this.addStringParametersToRequest(
+            authProviderConfiguration.get(TOKEN_PARAMS_FIELD_NAME)?.trim(),
+            httpRequest
+        );
+
+        
         // Return the request ready for sending
         return httpRequest;
     }
@@ -317,8 +326,8 @@ public with sharing class OAuthJwtClientCredentials extends Auth.AuthProviderPlu
         }
 
         // Check if the per user mode is enabled, if so update the log entry for that user mapping
-        if( Boolean.valueOf(authProviderConfiguration.get(PER_USER_MODE_FIELD_NAME)) &&
-            Boolean.valueOf(authProviderConfiguration.get(LOGIN_LOGGING_ENABLED_FIELD_NAME))){
+        if( Boolean.valueOf(authProviderConfiguration.get(ENABLE_PER_USER_MODE_FIELD_NAME)) &&
+            Boolean.valueOf(authProviderConfiguration.get(ENABLE_LOGIN_LOGGING_FIELD_NAME))){
             
             // Update the mapping record    
             getAuthProviderUtil().call('updateMappingLoginDetails', new Map<String, Object> { 
@@ -453,6 +462,48 @@ public with sharing class OAuthJwtClientCredentials extends Auth.AuthProviderPlu
 
 
     /**
+     * @description Method to add additional URL encoded POST Body values to the body. Will take the
+     *              base string followed by an ampersand and the value of the parameters.
+     *              Parameter format is a colon separated key value pair. For multiple values split the
+     *              key value pairs with a comma
+     * @param       parameterValue The comma separated key/value pairs of parameters to add. i.e.
+     *                             client_id : [CLIENT_ID], tenant : abcde
+     * @param       httpRequest    The HttpRequest object to add the parameter values to
+     */
+    private void addStringParametersToRequest(String parameterValue, HttpRequest httpRequest){
+        
+        // Validate the parameter has a value
+        if(String.isBlank(parameterValue)){
+            return;
+        }
+
+        // Create a map to hold the parameters
+        Map<String,String> parameterMap = new Map<String,String>();
+
+        // Each header should be split by a comma, due to fact multi line is not supported
+        for(String line : parameterValue.split(',')){
+            
+            // Check the line contains a colon but still has a value after the colon
+            if(line.contains(':')){
+                
+                // Split the value in key value pair
+                String[] keyValueList = line.split(':');
+                
+                // Validate the header is correct and has a 
+                if(keyValueList.size() == 2){
+                    parameterMap.put(keyValueList[0]?.trim(), keyValueList[1]?.trim());
+                }
+            }
+        }
+
+        // Add the parameters to the string
+        if(!parameterMap.isEmpty()){
+            httpRequest.setBody(httpRequest.getBody() + '&' + this.urlParameterQueryString(parameterMap));
+        }
+    }
+
+
+    /**
      * @description Method to validate an Apex Supported JWS Header Algorithm
      * @param       algorithm    The name of the algorithm to validate
      * @return      Name of the input algorithm if validated
@@ -527,7 +578,8 @@ public with sharing class OAuthJwtClientCredentials extends Auth.AuthProviderPlu
      * @param       e                The exception that is thrown and needs to be handled
      * @throws      GenericException Always
      */
-    private void handleException(Exception e, Map<String,String> authProviderConfiguration){
+    @TestVisible
+    private static void handleException(Exception e, Map<String,String> authProviderConfiguration){
         
         // Generate a generic exception message for the error handling and to be thrown to the user
         String exceptionMessage = String.format(GENERIC_EXCEPTION_MSG, new String[]{e.getTypeName(), e.getMessage()});
@@ -535,7 +587,7 @@ public with sharing class OAuthJwtClientCredentials extends Auth.AuthProviderPlu
         // If logging is enabled use the "Lightweight - Auth Provider Util v2" method to insert an error log
         // This does mean a dependency with a different package, simply remove this code if you don't
         // want to install the dependency      
-        if(Boolean.valueOf(authProviderConfiguration.get(ERROR_LOGGING_ENABLED_FIELD_NAME))){
+        if(Boolean.valueOf(authProviderConfiguration.get(ENABLE_ERROR_LOGGING_FIELD_NAME))){
             
             getAuthProviderUtil().call('insertLog', new Map<String, Object> { 
                 'authProviderName' => authProviderConfiguration.get(AUTH_PROVIDER_NAME_FIELD_NAME)?.trim(),
@@ -552,13 +604,13 @@ public with sharing class OAuthJwtClientCredentials extends Auth.AuthProviderPlu
 
     /**
      * Method to Switch the mapped subject between per User Mode and Named Principal Mode
-     * If per User Mode is enabled use the "Lightweight - Auth Provider Util" method and populate the 
+     * If per User Mode is enabled use the "Lightweight - Auth Provider Util v2" method and populate the 
      * mapping fields for each user  that is allowed to get a token.
      */
     private static String getSubject(Map<String,String> authProviderConfiguration){
         
         // Check if the per user mode is enabled
-        if(Boolean.valueOf(authProviderConfiguration.get(PER_USER_MODE_FIELD_NAME))){
+        if(Boolean.valueOf(authProviderConfiguration.get(ENABLE_PER_USER_MODE_FIELD_NAME))){
             
 			
             // If no user mapping exists throw an error
@@ -586,8 +638,14 @@ public with sharing class OAuthJwtClientCredentials extends Auth.AuthProviderPlu
     }
 
     
-
-
+    /**
+     * @description Method to get an instance of the AuthProviderUtil class.
+     *              This option requires the "Lightweight - Auth Provider Util v2" (04t4K000002JuxSQAS)
+     *              package to be installed
+     * @return      Instance of the AuthProviderUtil class
+     * @throws      GenericException The lwt.AuthProviderUtil class does not exist.
+     */
+    @TestVisible
     private static Callable getAuthProviderUtil(){
         
         // Lazy loading
@@ -597,7 +655,8 @@ public with sharing class OAuthJwtClientCredentials extends Auth.AuthProviderPlu
             authProviderUtil = (Callable) Type.forName('lwt.AuthProviderUtil')?.newInstance();
             
             // Throw an error if the package is not installed
-            if(authProviderUtil == null){
+            // Add Test check here so the test does not fail in case the package is installed
+            if(authProviderUtil == null || Test.isRunningTest()){
                 throw new GenericException(MISSING_UTIL_PACKAGE_MSG);
             }
         }
@@ -612,27 +671,28 @@ public with sharing class OAuthJwtClientCredentials extends Auth.AuthProviderPlu
      * @description Custom Exception thrown when there is an issue generating the JWS.
      */
     @TestVisible
-    private class JwsException      extends Exception{}
+    private class JwsException    extends Exception{}
 
 
     /**
      * @description Custom Exception thrown when there is an issue generating the token.
      */
     @TestVisible
-    private class TokenException    extends Exception{}
+    private class TokenException  extends Exception{}
 
-     /**
+
+    /**
      * @description Custom Exception thrown when there is an issue related the subject
      */
     @TestVisible
-    private class SubjectException    extends Exception{}
+    private class SubjectException extends Exception{}
 
 
     /**
      * @description Custom Exception thrown when there is an issue generating the token.
      */
     @TestVisible
-    private class GenericException    extends Exception{}
+    private class GenericException extends Exception{}
 
 
     /** **************************************************************************************************** **

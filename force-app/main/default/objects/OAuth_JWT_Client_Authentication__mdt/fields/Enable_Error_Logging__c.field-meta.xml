@@ -4,7 +4,7 @@
     <defaultValue>true</defaultValue>
     <externalId>false</externalId>
     <fieldManageability>DeveloperControlled</fieldManageability>
-    <inlineHelpText>If enabled you need to have the &quot;Lightweight - Auth Provider Util&quot; package installed</inlineHelpText>
+    <inlineHelpText>This option requires the &quot;Lightweight - Auth Provider Util v2&quot; (04t4K000002JuxSQAS) package to be installed.</inlineHelpText>
     <label>Enable Error Logging</label>
     <type>Checkbox</type>
 </CustomField>

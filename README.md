@@ -1,10 +1,27 @@
-# OAuth 2.0 JWT Client Credentials Authentication Auth. Provider for use with Salesforce Named and External Credentials
+# Lightweight - OAuth 2.0 JWT Client Credentials Authentication Auth. Provider for use with Salesforce Named and External Credentials
 ## Description
 A reusable Auth Provider that can be used with named / external credentials that executes an OAuth 2.0 JWT Client Authentication flow using a Client Credentials grant type.
+
 The grant type standards are described in https://datatracker.ietf.org/doc/html/rfc7523#section-2.2
 
 ## Blog details
 https://medium.com/@justusvandenberg/oauth-2-0-jwt-client-credentials-authentication-auth-d269835baae2
+
+## Package Info
+| Package Info | Value |
+|---|---|
+|Name|Lightweight - OAuth 2.0 JWT Client Credentials Auth Provider|
+|Version|0.1.0-1|
+|Installation URL| */packaging/installPackage.apexp?p0=xxx*
+|GIT URL|https://github.com/jfwberg/OAuthJwtClientCredentials.git|
+
+## Optional Dependencies
+This package has an extension that adds a basic (error) logging functionality and a user mapping utility that allows the Auth Provider to work in a user context using "Per User" instead of "Named Principal". 
+
+| Installation Order | Package Name | Package Version | Installation URL | GIT Url |
+|---|---|---|---|---|
+| 1 | Lightweight - Auth Provider Util v2 | 0.1.0.LATEST | /packaging/installPackage.apexp?p0=04t4K000002JuxSQAS | https://github.com/jfwberg/auth-provider-util.git |
+ 
 
 ## Important
 - Security is no easy subject: Before implementing this (or any) solution, always validate what you're doing with a certified sercurity expert and your certified implementation partner
@@ -31,22 +48,27 @@ In my example I am going to connect an api called "PiMoria"; this my test domain
 3. Populate the fields in the the Auth. Provider. The below table details what is required in the fields
 4. Triple check you put in all mandatory fields: If you have forgotten one, you have to re-do them all
 
-| Field Name                        | Description                                                                                                                                                                   | Example                              |
-|-----------------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|--------------------------------------|
-| Name                              | Auth Provider API Name                                                                                                                                                        | PiMoria PROD                         |
-| URL Suffix                        | The URL suffix that is used in the callback URL Make sure this is the same as the name field                                                                                  | PiMoria                              |
-| Additional Token Endpoint Headers | Optional headers that are send during the API token request key value pairs are split with a comma and header key values are set using a colon                                | apiId : echo, apiId : 1919           |
-| Auth Provider Name                | The name of the Auth Provider: !! This must be the same as the Name field !!                                                                                                  | PiMora                               |
-| JWT Algorithm                     | The algoritm used for signing the JWT. Valid values are: 'RS256','RS384','RS512','ES256','ES384','ES512' Note: we are limited to the algorithms supported by the Crypto Class | RS512                                |
-| JWT Audience                      | The aud in the JWT                                                                                                                                                            | https://prod.pimoria.com             |
-| JWT Issuer                        | The iss in the JWT                                                                                                                                                            | pimoria-client-api-identifier        |
-| JWT Kid                           | The Key Id in the JWT                                                                                                                                                         | prod-1                               |
-| JWT Signing Algorithm             | The algorithm used to sign the JWT and generate a JWS  'RSA-SHA256','RSA-SHA384','RSA-SHA512','ECDSA-SHA256','ECDSA-SHA384','ECDSA-SHA512'                                    | RSA-SHA512                           |
-| JWT Signing Certificate Name      | The certificate API name that is used for signing the certificate                                                                                                             | PiMoriaProd                          |
-| JWT Subject                       | The sub field in the JWT                                                                                                                                                      | system.user@pimoria.com              |
-| Token Endpoint URL                | The URL for the token endpoint, usually ends in /oauth2/token                                                                                                                 | https://prod.pimoria.com/oauth2/token|
-| Scope                             | Optional value for the scope parameter in the request body                                                                                                                    | api,refresh_token                    |
-| Custom Callback URL               | Optionally you can add your custom callback URL, this should not be required. The code generates the callback URL based on the name                                           |                                      |
+| Field Name                           | Description                                                                                                                                                                   | Example                              |
+|--------------------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|--------------------------------------|
+| Name                                 | Auth Provider API Name                                                                                                                                                        | PiMoria PROD                         |
+| URL Suffix                           | The URL suffix that is used in the callback URL Make sure this is the same as the name field                                                                                  | PiMoria                              |
+| Additional Token Endpoint Headers    | Optional headers that are send during the API token request. Key value pairs are split with a comma and header key values are set using a colon                               | apiId : echo, apiKey : 1919          |
+| Additional Token Endpoint Parameters | Optional POST body parameters that are send during the API token request. Key value pairs are split with a comma and parameter key values are set using a colon               | tenant : 12-345, client_id : ab-cde  |
+| Auth Provider Name                   | The name of the Auth Provider: !! This must be the same as the Name field !!                                                                                                  | PiMora                               |
+| JWT Algorithm                        | The algoritm used for signing the JWT. Valid values are: 'RS256','RS384','RS512','ES256','ES384','ES512' Note: we are limited to the algorithms supported by the Crypto Class | RS512                                |
+| JWT Audience                         | The aud in the JWT                                                                                                                                                            | https://prod.pimoria.com             |
+| JWT Issuer                           | The iss in the JWT                                                                                                                                                            | pimoria-client-api-identifier        |
+| JWT Kid                              | The Key Id in the JWT                                                                                                                                                         | prod-1                               |
+| JWT Signing Algorithm                | The algorithm used to sign the JWT and generate a JWS  'RSA-SHA256','RSA-SHA384','RSA-SHA512','ECDSA-SHA256','ECDSA-SHA384','ECDSA-SHA512'                                    | RSA-SHA512                           |
+| JWT Signing Certificate Name         | The certificate API name that is used for signing the certificate                                                                                                             | PiMoriaProd                          |
+| JWT Subject                          | The sub field in the JWT                                                                                                                                                      | system.user@pimoria.com              |
+| Token Endpoint URL                   | The URL for the token endpoint, usually ends in /oauth2/token                                                                                                                 | https://prod.pimoria.com/oauth2/token|
+| Scope                                | Optional value for the scope parameter in the request body                                                                                                                    | api,refresh_token                    |
+| Custom Callback URL                  | Optionally you can add your custom callback URL, this should not be required. The code generates the callback URL based on the name                                           |                                      |
+| Enable Error Logging                 | Optionally error logging can be enabled to log any errors thrown during the get token process                                                                                 |                                      |
+| Enable Per User Mode                 | Optionally the Auth Provider allows for Per User mode instead of Named Principal, to allow for user APIs that require user context. A mapping needs to be setup.              |                                      |
+| Enable Per User Login Logging        | Optionally you can add your custom callback URL, this should not be required. The code generates the callback URL based on the name                                           |                                      |
+
 
 When finished it should look like something like this
 ![image info](./media/02_Auth_Provider_Setup.png)

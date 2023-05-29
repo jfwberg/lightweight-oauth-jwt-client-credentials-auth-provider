@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Enable_Per_User_Mode__c</fullName>
+    <defaultValue>false</defaultValue>
+    <externalId>false</externalId>
+    <fieldManageability>DeveloperControlled</fieldManageability>
+    <inlineHelpText>If per user mode is enabled a mapping needs to exist where each User Id is mapped to the external identifier. Use the &quot;Auth Provider Util&quot; App to create these mappings. If this is switched on the JWT Subject field will be populated based on the user mapping.
+This option requires the &quot;Lightweight - Auth Provider Util v2&quot; (04t4K000002JuxSQAS) package to be installed.</inlineHelpText>
+    <label>Enable Per User Mode</label>
+    <type>Checkbox</type>
+</CustomField>

@@ -54,8 +54,8 @@ private with sharing class OAuthJwtClientCredentialsTest {
         Test.stopTest();
 
         // Assert test results
-        System.assertEquals('access_token_value',    tokenResponse.oauthToken, 'Unexpected oauthToken value');
-        System.assertEquals('TestState',            tokenResponse.state        , 'Unexpected state value');
+        System.assertEquals('access_token_value', tokenResponse.oauthToken, 'Unexpected oauthToken value');
+        System.assertEquals('TestState',          tokenResponse.state     , 'Unexpected state value');
     }
 
 
@@ -122,12 +122,15 @@ private with sharing class OAuthJwtClientCredentialsTest {
         
         // Test the http request is generated correcty
         Test.startTest();
-        HttpRequest httpRequest = getAuthProvider().generateHttpRequest(getAuthProviderConfig(),'{}');
+        HttpRequest httpRequest = getAuthProvider().generateHttpRequest(getAuthProviderConfig(),'test=body');
         Test.stopTest();
+
+        // Validate
+        System.assertEquals('test=body&tenant=%5BTENANT%5D&client_id=%5BCLIENT_ID%5D', httpRequest.getBody(),'Unexpected request body');
         
         // Assert test results for custom headers
-        System.assertEquals('[TEST_KEY]',    httpRequest.getHeader('apiKey'),'Expected header "apiKey" does not exist');
-        System.assertEquals('[API_ID]',        httpRequest.getHeader('apiId'),    'Expected header "apiId" does not exist');
+        System.assertEquals('[TEST_KEY]', httpRequest.getHeader('apiKey'),'Expected header "apiKey" does not exist');
+        System.assertEquals('[API_ID]',   httpRequest.getHeader('apiId'), 'Expected header "apiId" does not exist');
         
         // assert result for the endpoint
         System.assertEquals(
@@ -178,6 +181,30 @@ private with sharing class OAuthJwtClientCredentialsTest {
             );
         }
     }
+
+
+    /**
+     * @description Method to test the exceptions thrown in case there is no package installed
+     */
+    @IsTest
+    static void testGetAuthProviderUtil(){
+        try{
+            OAuthJwtClientCredentials.getAuthProviderUtil();
+        }catch(Exception e){
+            try{
+                OAuthJwtClientCredentials.handleException(e,getAuthProviderConfig());
+            }catch(Exception se){
+                System.assertEquals(
+                    String.format(
+                        OAuthJwtClientCredentials.GENERIC_EXCEPTION_MSG, 
+                        new String[]{e.getTypeName(), e.getMessage()}
+                    ),
+                    se.getMessage(),
+                    'Unexpected exception message'
+                );
+            }
+        }
+    }
     
 
     /** **************************************************************************************************** **
@@ -225,7 +252,7 @@ private with sharing class OAuthJwtClientCredentialsTest {
                 OAuthJwtClientCredentials.SCOPE_FIELD_NAME                  => 'web,api',
                 OAuthJwtClientCredentials.TOKEN_ENDPOINT_FIELD_NAME         => 'https://localhost/oauth/token',
                 OAuthJwtClientCredentials.TOKEN_HEADERS_FIELD_NAME          => 'apiKey : [TEST_KEY], apiId : [API_ID]',
-				OAuthJwtClientCredentials.TOKEN_PARAMS_FIELD_NAME           => 'tenant : [TENANT], client_id : [CLIENT_ID]',
+                OAuthJwtClientCredentials.TOKEN_PARAMS_FIELD_NAME           => 'tenant : [TENANT], client_id : [CLIENT_ID]',
                 OAuthJwtClientCredentials.JWT_ALGORITHM_FIELD_NAME          => 'RS512',
                 OAuthJwtClientCredentials.JWT_KID_FIELD_NAME                => 'TEST-KEY-ID',
                 OAuthJwtClientCredentials.JWT_SUBJECT_FIELD_NAME            => '[SUBJECT]',
@@ -234,10 +261,10 @@ private with sharing class OAuthJwtClientCredentialsTest {
                 OAuthJwtClientCredentials.AUTH_PROVIDER_NAME_FIELD_NAME     => 'TestAuthProvider',
                 OAuthJwtClientCredentials.JWS_SIGNING_CERT_FIELD_NAME       => 'certName',
                 OAuthJwtClientCredentials.JWS_SIGNING_ALGORITHM_FIELD_NAME  => 'RSA-SHA512',
-				OAuthJwtClientCredentials.PER_USER_MODE_FIELD_NAME          => 'false',
-				OAuthJwtClientCredentials.ERROR_LOGGING_ENABLED_FIELD_NAME  => 'true',
-				OAuthJwtClientCredentials.LOGIN_LOGGING_ENABLED_FIELD_NAME  => 'true'
-				
+                OAuthJwtClientCredentials.ENABLE_PER_USER_MODE_FIELD_NAME   => 'false',
+                OAuthJwtClientCredentials.ENABLE_ERROR_LOGGING_FIELD_NAME   => 'false',
+                OAuthJwtClientCredentials.ENABLE_LOGIN_LOGGING_FIELD_NAME   => 'false'
+                
             };
         }
         return authProviderConfig;

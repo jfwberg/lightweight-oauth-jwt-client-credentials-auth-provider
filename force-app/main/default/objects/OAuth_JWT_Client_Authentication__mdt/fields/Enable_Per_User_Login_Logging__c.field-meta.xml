@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Enable_Per_User_Login_Logging__c</fullName>
+    <defaultValue>false</defaultValue>
+    <externalId>false</externalId>
+    <fieldManageability>DeveloperControlled</fieldManageability>
+    <inlineHelpText>This option requires the &quot;Lightweight - Auth Provider Util v2&quot; (04t4K000002JuxSQAS) package to be installed.
+Enable this setting to enable logging on how often a token has been requested by a specific user. This can be helpful when just implementing this feature, the API log files will show the same info for longer term logging.</inlineHelpText>
+    <label>Enable Per User Login Logging</label>
+    <type>Checkbox</type>
+</CustomField>

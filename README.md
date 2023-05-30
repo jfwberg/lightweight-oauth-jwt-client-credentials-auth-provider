@@ -11,8 +11,8 @@ https://medium.com/@justusvandenberg/oauth-2-0-jwt-client-credentials-authentica
 | Package Info | Value |
 |---|---|
 |Name|Lightweight - OAuth 2.0 JWT Client Credentials Auth Provider|
-|Version|0.1.0-1|
-|Installation URL| */packaging/installPackage.apexp?p0=xxx*
+|Version|0.2.0-1|
+|Installation URL| */packaging/installPackage.apexp?p0=04t4K000002Juz4QAC*
 |GIT URL|https://github.com/jfwberg/OAuthJwtClientCredentials.git|
 
 ## Optional Dependencies
@@ -20,7 +20,7 @@ This package has an extension that adds a basic (error) logging functionality an
 
 | Installation Order | Package Name | Package Version | Installation URL | GIT Url |
 |---|---|---|---|---|
-| 1 | Lightweight - Auth Provider Util v2 | 0.1.0.LATEST | /packaging/installPackage.apexp?p0=04t4K000002JuxSQAS | https://github.com/jfwberg/auth-provider-util.git |
+| 1 | Lightweight - Auth Provider Util v2 | 0.2.0.LATEST | /packaging/installPackage.apexp?p0=04t4K000002JuyzQAC | https://github.com/jfwberg/auth-provider-util.git |
  
 
 ## Important

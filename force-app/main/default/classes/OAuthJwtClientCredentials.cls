@@ -1,27 +1,36 @@
 /**
- * @author      Justus van den Berg (jfwberg@gmail.com)
- * @date        April 2023
- * @copyright   (c) 2023 Justus van den Berg
- * @license     MIT (See LICENSE file in the project root)
- * @description OAuth 2.0 JWT Client Authentication Auth Provider for the use with Client Credentials
- *              Follows the standard as described in rfc7523Section 2.2
- *              (https://datatracker.ietf.org/doc/html/rfc7523#section-2.2)
- * @note        In order to use the (error) logging functions and to enabled "Per User" mode for
- *              user context mappings, It is required that the "Lightweight - Auth Provider Util
- *              v2" (04t4K000002JuxSQAS) package is installed.
- * @change      Implemented the following new functions:
- *              - Optional parameters, azure requires ?client_id=[client_id]&tentant=abcede
- *              - Error logging
- *              - Per user mode as well as Named Principal
- *              - User login logging, to keep track of what users have requested tokens
+ * @author         Justus van den Berg (jfwberg@gmail.com)
+ * @date           April 2023
+ * @copyright      (c) 2023 Justus van den Berg
+ * @license        MIT (See LICENSE file in the project root)
+ * @description    OAuth 2.0 JWT Client Authentication Auth Provider for the use with Client Credentials
+ *                 Follows the standard as described in rfc7523Section 2.2
+ *                 (https://datatracker.ietf.org/doc/html/rfc7523#section-2.2)
+ * @note           In order to use the (error) logging functions and to enabled "Per User" mode for
+ *                 user context mappings, It is required that the "Lightweight - Auth Provider Util
+ *                 v2" (04t4K000002JuyzQAC) package is installed.
+ * @change         Implemented the following new functions:
+ *                 - Optional parameters, azure requires ?client_id=[client_id]&tentant=abcede
+ *                 - Error logging
+ *                 - Per user principal as well as Named Principal
+ *                 - User login logging, to keep track of what users have requested tokens
+ * @false-positive PMD.CyclomaticComplexity The Cyclomatic Complexity in this class is quite high.
+ *                                          The methods themselves are OK.
+ *                                          It's due to the fact that I want al the logic in a
+ *                                          single class, as an AuthProvider the class has a single
+ *                                          function and is used in a single place.
+ *                                          It can be split up, but this keeps it nicely together
+ *                                          and the class just under 800 lines what is acceptable
+ *                                          imho.
  */
+@SuppressWarnings('PMD.CyclomaticComplexity')
 public with sharing class OAuthJwtClientCredentials extends Auth.AuthProviderPluginClass{
 
     /** **************************************************************************************************** **
      **                                          PRIVATE VARIABLES                                           **
      ** **************************************************************************************************** **/
-    // The optional auth provider util for error logging and per user mode (requires the "Lightweight - Auth Provider Util v2" package)
-    // If you dont want this depencency, disable the options "Enable Error Logging", "Enabled Per User Mode" and "Enabled Per User Login Logging" in the Custom Auth Provider Setup.
+    // The optional auth provider util for error logging and per user principal (requires the "Lightweight - Auth Provider Util v2" package)
+    // If you dont want this depencency, disable the options "Enable Error Logging", "Enabled Per user principal" and "Enabled Per User Login Logging" in the Custom Auth Provider Setup.
     private static Callable authProviderUtil;
 
 
@@ -69,7 +78,7 @@ public with sharing class OAuthJwtClientCredentials extends Auth.AuthProviderPlu
     // Any messages go here
     @TestVisible private final static String GENERIC_EXCEPTION_MSG             = 'A {0} was thrown with the message: {1}';
     @TestVisible private final static String NO_USER_MAPPING_MSG               = 'Nu User Mapping Record was found for Auth Proivder "{0}" with user "{1}"';    
-    @TestVisible private final static String MISSING_UTIL_PACKAGE_MSG          = 'Issue whilst instantiating the AuthProviderUtil class. Make sure the "Lightweight - Auth Provider Util v2" package is installed. Alternatively, DISABLE the options "Enable Error Logging", "Enable Per User Mode" and "Enable Per User Login Logging" in the Custom Auth Provider Setup.';
+    @TestVisible private final static String MISSING_UTIL_PACKAGE_MSG          = 'Issue whilst instantiating the AuthProviderUtil class. Make sure the "Lightweight - Auth Provider Util v2" package is installed. Alternatively, DISABLE the options "Enable Error Logging", "Enable Per user principal" and "Enable Per User Login Logging" in the Custom Auth Provider Setup.';
     @TestVisible private final static String INVALID_TOKEN_RESPONSE_MSG        = 'Unexpected response when calling the token endpoint: {0}';
     @TestVisible private final static String JWS_INVALID_HEAD_ALG_EXCEPTION_MSG= 'Invalid JWS Header Algorithm provided. Valid values are: \'RS256\',\'RS384\',\'RS512\',\'ES256\',\'ES384\' and \'ES512\'';
     @TestVisible private final static String JWS_INVALID_SIGN_ALG_EXCEPTION_MSG= 'Invalid JWS Signing Algorithm provided. Valid values are: \'RSA-SHA256\',\'RSA-SHA384\',\'RSA-SHA512\',\'ECDSA-SHA256\',\'ECDSA-SHA384\',\'ECDSA-SHA512\'';
@@ -281,7 +290,6 @@ public with sharing class OAuthJwtClientCredentials extends Auth.AuthProviderPlu
             authProviderConfiguration.get(TOKEN_PARAMS_FIELD_NAME)?.trim(),
             httpRequest
         );
-
         
         // Return the request ready for sending
         return httpRequest;
@@ -325,7 +333,7 @@ public with sharing class OAuthJwtClientCredentials extends Auth.AuthProviderPlu
             ));
         }
 
-        // Check if the per user mode is enabled, if so update the log entry for that user mapping
+        // Check if the per user principal is enabled, if so update the log entry for that user mapping
         if( Boolean.valueOf(authProviderConfiguration.get(ENABLE_PER_USER_MODE_FIELD_NAME)) &&
             Boolean.valueOf(authProviderConfiguration.get(ENABLE_LOGIN_LOGGING_FIELD_NAME))){
             
@@ -575,8 +583,11 @@ public with sharing class OAuthJwtClientCredentials extends Auth.AuthProviderPlu
     /**
      * @description Method that logs an exception and transforms any exception type into a
      *              GenericException
-     * @param       e                The exception that is thrown and needs to be handled
-     * @throws      GenericException Always
+     * @param       e                         The exception that is thrown and needs to be handled
+     * @param       authProviderConfiguration The configuration items for the custom authentication
+     *                                        provider that have been configured in the custom metadata
+     *                                        type.
+     * @throws      GenericException          Always
      */
     @TestVisible
     private static void handleException(Exception e, Map<String,String> authProviderConfiguration){
@@ -603,13 +614,18 @@ public with sharing class OAuthJwtClientCredentials extends Auth.AuthProviderPlu
 
 
     /**
-     * Method to Switch the mapped subject between per User Mode and Named Principal Mode
-     * If per User Mode is enabled use the "Lightweight - Auth Provider Util v2" method and populate the 
-     * mapping fields for each user  that is allowed to get a token.
+     * @description Method to Switch the mapped subject between per user principal and Named Principal Mode
+     *              as a Identity Type
+     *              If per user principal is enabled use the "Lightweight - Auth Provider Util v2" method
+     *              and populate the mapping fields for each user  that is allowed to get a token.
+     * @param       authProviderConfiguration The configuration items for the custom authentication
+     *                                        provider that have been configured in the custom metadata
+     *                                        type.
+     * @return      The subject that will be part of the JWT sub parameter
      */
     private static String getSubject(Map<String,String> authProviderConfiguration){
         
-        // Check if the per user mode is enabled
+        // Check if the per user principal is enabled
         if(Boolean.valueOf(authProviderConfiguration.get(ENABLE_PER_USER_MODE_FIELD_NAME))){
             
 			
@@ -640,7 +656,7 @@ public with sharing class OAuthJwtClientCredentials extends Auth.AuthProviderPlu
     
     /**
      * @description Method to get an instance of the AuthProviderUtil class.
-     *              This option requires the "Lightweight - Auth Provider Util v2" (04t4K000002JuxSQAS)
+     *              This option requires the "Lightweight - Auth Provider Util v2" (04t4K000002JuyzQAC)
      *              package to be installed
      * @return      Instance of the AuthProviderUtil class
      * @throws      GenericException The lwt.AuthProviderUtil class does not exist.

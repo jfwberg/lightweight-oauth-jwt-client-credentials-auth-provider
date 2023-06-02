@@ -8,7 +8,7 @@
  *                 (https://datatracker.ietf.org/doc/html/rfc7523#section-2.2)
  * @note           In order to use the (error) logging functions and to enabled "Per User" mode for
  *                 user context mappings, It is required that the "Lightweight - Auth Provider Util
- *                 v2" (04t4K000002JuyzQAC) package is installed.
+ *                 v2" (04t4K000002Jv1tQAC) package is installed.
  * @change         Implemented the following new functions:
  *                 - Optional parameters, azure requires ?client_id=[client_id]&tentant=abcede
  *                 - Error logging
@@ -656,7 +656,7 @@ public with sharing class OAuthJwtClientCredentials extends Auth.AuthProviderPlu
     
     /**
      * @description Method to get an instance of the AuthProviderUtil class.
-     *              This option requires the "Lightweight - Auth Provider Util v2" (04t4K000002JuyzQAC)
+     *              This option requires the "Lightweight - Auth Provider Util v2" (04t4K000002Jv1tQAC)
      *              package to be installed
      * @return      Instance of the AuthProviderUtil class
      * @throws      GenericException The lwt.AuthProviderUtil class does not exist.

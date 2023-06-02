@@ -4,10 +4,10 @@
       "path": "force-app",
       "default": true,
       "package": "Lightweight - OAuth 2.0 JWT Client Credentials Auth Provider",
-      "versionName": "Version 0.2.0-1",
-      "versionNumber": "0.2.0.NEXT",
+      "versionName": "Version 0.3.0-1",
+      "versionNumber": "0.3.0.NEXT",
       "versionDescription": "A lightweight generic Auth Provider Apex class that can be used with named/external credentials to get an access token using the OAuth 2.0 JWT Client Credentials Authentication Flow.",
-      "ancestorVersion": "0.1.0"
+      "ancestorVersion": "0.2.0"
     },
     {
       "path": "force-demo-data",
@@ -26,6 +26,7 @@
     "Lightweight - OAuth 2.0 JWT Client Credentials Auth Provider": "0Ho4K0000008OYeSAM",
     "Lightweight - OAuth 2.0 JWT Client Credentials Auth Provider@0.1.0-1": "04t4K000002JuypQAC",
     "Lightweight - OAuth 2.0 JWT Client Credentials Auth Provider@0.1.0-2": "04t4K000002JuyuQAC",
-    "Lightweight - OAuth 2.0 JWT Client Credentials Auth Provider@0.2.0-1": "04t4K000002Juz4QAC"
+    "Lightweight - OAuth 2.0 JWT Client Credentials Auth Provider@0.2.0-1": "04t4K000002Juz4QAC",
+    "Lightweight - OAuth 2.0 JWT Client Credentials Auth Provider@0.3.0-1": "04t4K000002Jv1yQAC"
   }
 }

@@ -11,8 +11,8 @@ https://medium.com/@justusvandenberg/oauth-2-0-jwt-client-credentials-authentica
 | Package Info | Value |
 |---|---|
 |Name|Lightweight - OAuth 2.0 JWT Client Credentials Auth Provider|
-|Version|0.2.0-1|
-|Installation URL| */packaging/installPackage.apexp?p0=04t4K000002Juz4QAC*
+|Version|0.3.0-1|
+|Installation URL| */packaging/installPackage.apexp?p0=04t4K000002Jv1yQAC*
 |GIT URL|https://github.com/jfwberg/OAuthJwtClientCredentials.git|
 
 ## Optional Dependencies
@@ -20,7 +20,7 @@ This package has an extension that adds a basic (error) logging functionality an
 
 | Installation Order | Package Name | Package Version | Installation URL | GIT Url |
 |---|---|---|---|---|
-| 1 | Lightweight - Auth Provider Util v2 | 0.2.0.LATEST | /packaging/installPackage.apexp?p0=04t4K000002JuyzQAC | https://github.com/jfwberg/auth-provider-util.git |
+| 1 | Lightweight - Auth Provider Util v2 | 0.3.0.LATEST | /packaging/installPackage.apexp?p0=04t4K000002Jv1tQAC | https://github.com/jfwberg/auth-provider-util.git |
  
 
 ## Important
@@ -36,7 +36,7 @@ This package has an extension that adds a basic (error) logging functionality an
 ## 00 :: Deployment and Preparation
 1. Import the JWT signing certificate into Salesforce, Note down the *Certificate API Name*
 2. Deploy the *Apex class* and the *Custom Metadata (including layouts)* from this SFDX Pproject to your Org (Or install the package)
-3. The package can be found here: *https://[MY_DOMAIN_URL]/packaging/installPackage.apexp?p0=04t6S000001EATBQA4*
+3. The package can be found here: *https://[MY_DOMAIN_URL]/packaging/installPackage.apexp?p0=04t4K000002Juz4QAC*
 
 ## 01 :: Setup the Auth. Provider
 In my example I am going to connect an api called "PiMoria"; this my test domain that I will use throughout this example.

@@ -4,7 +4,7 @@
     <defaultValue>false</defaultValue>
     <externalId>false</externalId>
     <fieldManageability>DeveloperControlled</fieldManageability>
-    <inlineHelpText>This option requires the &quot;Lightweight - Auth Provider Util v2&quot; (04t4K000002JuyzQAC) package to be installed.
+    <inlineHelpText>This option requires the &quot;Lightweight - Auth Provider Util v2&quot; (04t4K000002Jv1tQAC) package to be installed.
 Enable this setting to enable logging on how often a token has been requested by a specific user. This can be helpful when just implementing this feature, the API log files will show the same info for longer term logging.</inlineHelpText>
     <label>Enable Per User Login Logging</label>
     <type>Checkbox</type>

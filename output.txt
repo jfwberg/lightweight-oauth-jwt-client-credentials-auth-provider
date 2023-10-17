@@ -1,0 +1,3 @@
+Successfully created the package version [08cP300000001ddIAA]. Subscriber Package Version Id: 04tP3000000739FIAQ
+Package Installation URL: https://login.salesforce.com/packaging/installPackage.apexp?p0=04tP3000000739FIAQ
+As an alternative, you can use the "sf package:install" command.

@@ -31,9 +31,9 @@ private with sharing class OAuthJwtClientCredentialsTest {
         Test.stopTest();
         
         // Assert test results
-        System.assertEquals(
+        Assert.areEqual(
             pageReference.getUrl(),
-            URL.getSalesforceBaseUrl().toExternalForm() + '/services/authcallback/TestAuthProvider?state=TestState',
+            URL.getOrgDomainUrl().toExternalForm() + '/services/authcallback/TestAuthProvider?state=TestState',
             'Unexpected callback URL'
         );
     }
@@ -46,7 +46,8 @@ private with sharing class OAuthJwtClientCredentialsTest {
     static void testHandleCallback(){
         
         // Set a mock resonse for the token
-        Test.setMock(HttpCalloutMock.class, new MockTokenResponse()); 
+        Test.setMock(HttpCalloutMock.class, utl.Mck.getInstance());
+        setTokenResponseMock();
 
         // Test the method
         Test.startTest();
@@ -54,8 +55,8 @@ private with sharing class OAuthJwtClientCredentialsTest {
         Test.stopTest();
 
         // Assert test results
-        System.assertEquals('access_token_value', tokenResponse.oauthToken, 'Unexpected oauthToken value');
-        System.assertEquals('TestState',          tokenResponse.state     , 'Unexpected state value');
+        Assert.areEqual('access_token_value', tokenResponse.oauthToken, 'Unexpected oauthToken value');
+        Assert.areEqual('TestState',          tokenResponse.state     , 'Unexpected state value');
     }
 
 
@@ -66,7 +67,8 @@ private with sharing class OAuthJwtClientCredentialsTest {
     static void testRefresh(){
         
         // Set a mock resonse for the token
-        Test.setMock(HttpCalloutMock.class, new MockTokenResponse()); 
+        Test.setMock(HttpCalloutMock.class, utl.Mck.getInstance());
+        setTokenResponseMock();
 
         // Test the method
         Test.startTest();
@@ -74,7 +76,7 @@ private with sharing class OAuthJwtClientCredentialsTest {
         Test.stopTest();
 
         // Assert test results
-        System.assertEquals('access_token_value',    refreshResult.accessToken, 'Unexpected accessToken value');
+        Assert.areEqual('access_token_value',    refreshResult.accessToken, 'Unexpected accessToken value');
     }
 
 
@@ -85,7 +87,8 @@ private with sharing class OAuthJwtClientCredentialsTest {
     static void testGetUserInfo(){
         
         // Set a mock resonse for the token
-        Test.setMock(HttpCalloutMock.class, new MockTokenResponse());
+        Test.setMock(HttpCalloutMock.class, utl.Mck.getInstance());
+        setTokenResponseMock();
 
         // Test the method
         Test.startTest();
@@ -96,7 +99,7 @@ private with sharing class OAuthJwtClientCredentialsTest {
         Test.stopTest();
 
         // Assert test results
-        System.assertEquals('integration.user@example.com.invalid',    userData.email, 'Unexpected email value');
+        Assert.areEqual('integration.user@example.com.invalid',    userData.email, 'Unexpected email value');
     }
 
 
@@ -106,7 +109,7 @@ private with sharing class OAuthJwtClientCredentialsTest {
     @IsTest
     static void testGetCustomMetadataType(){
         // Assert test results
-        System.assertEquals(
+        Assert.areEqual(
             String.valueOf(OAuth_JWT_Client_Authentication__mdt.getSObjectType()),
             getAuthProvider().getCustomMetadataType(),
             'Unexpected custom metadata value'
@@ -126,14 +129,14 @@ private with sharing class OAuthJwtClientCredentialsTest {
         Test.stopTest();
 
         // Validate
-        System.assertEquals('test=body&tenant=%5BTENANT%5D&client_id=%5BCLIENT_ID%5D', httpRequest.getBody(),'Unexpected request body');
+        Assert.areEqual('test=body&tenant=%5BTENANT%5D&client_id=%5BCLIENT_ID%5D', httpRequest.getBody(),'Unexpected request body');
         
         // Assert test results for custom headers
-        System.assertEquals('[TEST_KEY]', httpRequest.getHeader('apiKey'),'Expected header "apiKey" does not exist');
-        System.assertEquals('[API_ID]',   httpRequest.getHeader('apiId'), 'Expected header "apiId" does not exist');
+        Assert.areEqual('[TEST_KEY]', httpRequest.getHeader('apiKey'),'Expected header "apiKey" does not exist');
+        Assert.areEqual('[API_ID]',   httpRequest.getHeader('apiId'), 'Expected header "apiId" does not exist');
         
         // assert result for the endpoint
-        System.assertEquals(
+        Assert.areEqual(
             getAuthProviderConfig().get(OAuthJwtClientCredentials.TOKEN_ENDPOINT_FIELD_NAME),
             httpRequest.getEndpoint(),
             'Unexpected endpoint'
@@ -147,17 +150,13 @@ private with sharing class OAuthJwtClientCredentialsTest {
     @IsTest
     static void testValidateJwsHeaderAlgorithm(){
         // Happy path
-        System.assertEquals('RS512', getAuthProvider().validateJwsHeaderAlgorithm('RS512'), 'Unexpected algorithm');
+        Assert.areEqual('RS512', getAuthProvider().validateJwsHeaderAlgorithm('RS512'), 'Unexpected algorithm');
 
         // Exception path
         try {
             getAuthProvider().validateJwsHeaderAlgorithm('invalid');
         }catch(OAuthJwtClientCredentials.JwsException e){
-            System.assertEquals(
-                OAuthJwtClientCredentials.JWS_INVALID_HEAD_ALG_EXCEPTION_MSG,
-                e.getMessage(),
-                'Unexpected exception message'
-            );
+            utl.Tst.assertExceptionMessage(OAuthJwtClientCredentials.JWS_INVALID_HEAD_ALG_EXCEPTION_MSG, e);
         }
     }
 
@@ -168,17 +167,13 @@ private with sharing class OAuthJwtClientCredentialsTest {
     @IsTest
     static void testValidateJwsSigningAlgorithm(){
         // Happy path
-        System.assertEquals('RSA-SHA512', getAuthProvider().validateJwsSigningAlgorithm('RSA-SHA512'), 'Unexpected algorithm');
+        Assert.areEqual('RSA-SHA512', getAuthProvider().validateJwsSigningAlgorithm('RSA-SHA512'), 'Unexpected algorithm');
 
         // Exception path
         try {
             getAuthProvider().validateJwsSigningAlgorithm('invalid');
         }catch(OAuthJwtClientCredentials.JwsException e){
-            System.assertEquals(
-                OAuthJwtClientCredentials.JWS_INVALID_SIGN_ALG_EXCEPTION_MSG,
-                e.getMessage(),
-                'Unexpected exception message'
-            );
+            utl.Tst.assertExceptionMessage(OAuthJwtClientCredentials.JWS_INVALID_SIGN_ALG_EXCEPTION_MSG, e);
         }
     }
 
@@ -194,13 +189,11 @@ private with sharing class OAuthJwtClientCredentialsTest {
             try{
                 OAuthJwtClientCredentials.handleException(e,getAuthProviderConfig());
             }catch(Exception se){
-                System.assertEquals(
-                    String.format(
-                        OAuthJwtClientCredentials.GENERIC_EXCEPTION_MSG, 
-                        new String[]{e.getTypeName(), e.getMessage()}
-                    ),
-                    se.getMessage(),
-                    'Unexpected exception message'
+                utl.Tst.assertExceptionMessage(
+                    OAuthJwtClientCredentials.GENERIC_EXCEPTION_MSG,
+                    e.getTypeName(),
+                    e.getMessage(),
+                    se
                 );
             }
         }
@@ -210,6 +203,20 @@ private with sharing class OAuthJwtClientCredentialsTest {
     /** **************************************************************************************************** **
      **                                      PRIVATE TEST DATA METHODS                                       **
      ** **************************************************************************************************** **/
+    /**
+     * @description Method for setting up a 
+     */
+    private static void setTokenResponseMock(){
+            
+        OAuthJwtClientCredentials.TokenResponse tokenResponse = new OAuthJwtClientCredentials.TokenResponse();
+        tokenResponse.access_token  = 'access_token_value';
+        tokenResponse.token_type    = 'Bearer';
+        tokenResponse.expires_in    = '1682439225';
+
+        utl.Mck.setResponse(200, JSON.serializePretty(tokenResponse));      
+    }
+
+
     /**
      * @description Method that return a mock token response
      * @return      Mock token reponse
@@ -270,32 +277,4 @@ private with sharing class OAuthJwtClientCredentialsTest {
         return authProviderConfig;
     }
 
-
-    /** **************************************************************************************************** **
-     **                                         PRIVATE MOCK CLASSES                                         **
-     ** **************************************************************************************************** **/
-    /**
-     * @description Class for testing the OAuthJwtClientAuthentication Methods
-     */
-     private class MockTokenResponse implements HttpCalloutMock { 
-        
-        /**
-         * @description Method to generate the mock token response
-         * @param       httpRequest The HttpRequest object to add the header values to
-         * @return      The mocked HttpResponse (Token)
-         */
-        public HttpResponse respond(HttpRequest httpRequest) { 
-            
-            OAuthJwtClientCredentials.TokenResponse tokenResponse = new OAuthJwtClientCredentials.TokenResponse();
-            tokenResponse.access_token  = 'access_token_value';
-            tokenResponse.token_type    = 'Bearer';
-            tokenResponse.expires_in    = '1682439225';
-
-            HttpResponse httpResponse = new HttpResponse();
-            httpResponse.setStatusCode(200);
-            httpResponse.setBody(JSON.serializePretty(tokenResponse));
-
-            return httpResponse;
-        }
-    }
 }

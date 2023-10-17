@@ -244,7 +244,7 @@ public with sharing class OAuthJwtClientCredentials extends Auth.AuthProviderPlu
         
         // By default generate the Standard Salesforce Callback URL for the Auth Provider
         return new PageReference(
-            URL.getSalesforceBaseUrl().toExternalForm() + '/services/authcallback/' + authProviderConfiguration.get(AUTH_PROVIDER_NAME_FIELD_NAME)?.trim()
+            URL.getOrgDomainUrl().toExternalForm() + '/services/authcallback/' + authProviderConfiguration.get(AUTH_PROVIDER_NAME_FIELD_NAME)?.trim()
         );
     }
 

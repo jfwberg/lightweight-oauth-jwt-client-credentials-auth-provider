@@ -1,13 +1,18 @@
 {
   "packageDirectories": [
     {
-      "path": "force-app",
+      "path": "force-app/package",
       "default": true,
       "package": "Lightweight - OAuth 2.0 JWT Client Credentials Auth Provider",
-      "versionName": "Version 0.3.0-1",
-      "versionNumber": "0.3.0.NEXT",
+      "versionName": "Version 59.0 - 0.1",
+      "versionNumber": "0.4.0.NEXT",
       "versionDescription": "A lightweight generic Auth Provider Apex class that can be used with named/external credentials to get an access token using the OAuth 2.0 JWT Client Credentials Authentication Flow.",
-      "ancestorVersion": "0.2.0"
+      "ancestorVersion": "0.3.0",
+      "dependencies": [
+        {
+          "package": "Lightweight - Apex Unit Test Util v2@2.1.0-2"
+        }
+      ]
     },
     {
       "path": "force-demo-data",
@@ -21,12 +26,15 @@
   "name": "lightweight-oauth-jwt-client-credentials-auth-provider",
   "namespace": "lwt",
   "sfdcLoginUrl": "https://login.salesforce.com",
-  "sourceApiVersion": "57.0",
+  "sourceApiVersion": "59.0",
   "packageAliases": {
+    "Lightweight - Apex Unit Test Util v2@2.1.0-2": "04tP30000006pflIAA",
+    "Lightweight - Apex Unit Test Util v2 (Unlocked)@2.1.0-2": "04tP30000006pUUIAY",
     "Lightweight - OAuth 2.0 JWT Client Credentials Auth Provider": "0Ho4K0000008OYeSAM",
     "Lightweight - OAuth 2.0 JWT Client Credentials Auth Provider@0.1.0-1": "04t4K000002JuypQAC",
     "Lightweight - OAuth 2.0 JWT Client Credentials Auth Provider@0.1.0-2": "04t4K000002JuyuQAC",
     "Lightweight - OAuth 2.0 JWT Client Credentials Auth Provider@0.2.0-1": "04t4K000002Juz4QAC",
-    "Lightweight - OAuth 2.0 JWT Client Credentials Auth Provider@0.3.0-1": "04t4K000002Jv1yQAC"
+    "Lightweight - OAuth 2.0 JWT Client Credentials Auth Provider@0.3.0-1": "04t4K000002Jv1yQAC",
+    "Lightweight - OAuth 2.0 JWT Client Credentials Auth Provider@0.4.0-1": "04tP3000000739FIAQ"
   }
 }

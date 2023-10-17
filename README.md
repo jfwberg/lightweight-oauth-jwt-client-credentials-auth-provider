@@ -4,23 +4,38 @@ A reusable Auth Provider that can be used with named / external credentials that
 
 The grant type standards are described in https://datatracker.ietf.org/doc/html/rfc7523#section-2.2
 
+## IMPORTANT UPDATE ##
+Since the Winter 24 release (API v59.0) Salesforce Named Credentials natively Support this flow making this Auth Provider Solution Obsolete for System Integrations using Named Principals.
+
+A reason to keep using this Auth Provider is you need a **Per User principal** based on the JWT Subject or send custom headers to the token endpoint.
+
 ## Blog details
 https://medium.com/@justusvandenberg/oauth-2-0-jwt-client-credentials-authentication-auth-d269835baae2
+
+## Dependency - Package Info
+The following package need to be installed first before installing this package.
+If you use the *managed package* you need to installed the managed package dependency and if you use the *unlocked version* you need to use the unlocked dependency.
+| Info | Value |
+|---|---|
+|Name|Lightweight - Apex Unit Test Util v2|
+|Version|2.1.0-2|
+|Managed Installation URL | */packaging/installPackage.apexp?p0=04tP30000006pflIAA*
+|Unlocked Installation URL| */packaging/installPackage.apexp?p0=04tP30000006pUUIAY*
 
 ## Package Info
 | Package Info | Value |
 |---|---|
 |Name|Lightweight - OAuth 2.0 JWT Client Credentials Auth Provider|
-|Version|0.3.0-1|
-|Installation URL| */packaging/installPackage.apexp?p0=04t4K000002Jv1yQAC*
-|GIT URL|https://github.com/jfwberg/OAuthJwtClientCredentials.git|
+|Version|0.4.0-1|
+|Installation URL| */packaging/installPackage.apexp?p0=04tP3000000739FIAQ*
+|GIT URL|https://github.com/jfwberg/lightweight-oauth-jwt-client-credentials-auth-provider.git|
 
 ## Optional Dependencies
 This package has an extension that adds a basic (error) logging functionality and a user mapping utility that allows the Auth Provider to work in a user context using "Per User" instead of "Named Principal". 
 
 | Installation Order | Package Name | Package Version | Installation URL | GIT Url |
 |---|---|---|---|---|
-| 1 | Lightweight - Auth Provider Util v2 | 0.3.0.LATEST | /packaging/installPackage.apexp?p0=04t4K000002Jv1tQAC | https://github.com/jfwberg/auth-provider-util.git |
+| 1 | Lightweight - Auth Provider Util v2 | 0.4.0.LATEST | /packaging/installPackage.apexp?p0=04tP30000006yO5IAI | https://github.com/jfwberg/lightweight-auth-provider-util.git |
  
 
 ## Important

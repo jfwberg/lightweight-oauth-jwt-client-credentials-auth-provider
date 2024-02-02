@@ -29,9 +29,28 @@ public with sharing class OAuthJwtClientCredentials extends Auth.AuthProviderPlu
     /** **************************************************************************************************** **
      **                                          PRIVATE VARIABLES                                           **
      ** **************************************************************************************************** **/
+    // For debugging purposes extract the callout data
+    private utl.Rst tokenCallout;
+
     // The optional auth provider util for error logging and per user principal (requires the "Lightweight - Auth Provider Util v2" package)
     // If you dont want this depencency, disable the options "Enable Error Logging", "Enabled Per user principal" and "Enabled Per User Login Logging" in the Custom Auth Provider Setup.
     private static Callable authProviderUtil;
+
+    // The details of the logged in user
+    @TestVisible private String        loggedInUserId   = UserInfo.getUserId();
+    @TestVisible private Auth.UserData loggedInUserData = new Auth.UserData(
+        UserInfo.getUserId(),    // User Id
+        UserInfo.getFirstName(), // First Name
+        UserInfo.getLastName(),  // Last Name
+        UserInfo.getFirstName() + ' ' +  UserInfo.getLastName(), // Full Name (user name here)
+        UserInfo.getUserEmail(), // Email Address
+        null,                    // Link
+        UserInfo.getUserName(),  // Username
+        UserInfo.getLocale(),    // Locale
+        null,                    // Provider
+        null,                    // Site login
+        null                     // Attribute map
+    );
 
 
     /** **************************************************************************************************** **
@@ -66,10 +85,13 @@ public with sharing class OAuthJwtClientCredentials extends Auth.AuthProviderPlu
     @TestVisible private final static String ENABLE_LOGIN_LOGGING_FIELD_NAME = String.valueOf(OAuth_JWT_Client_Authentication__mdt.Enable_Per_User_Login_Logging__c);
 
     // This will generate the GUID that is used to identify this specific transaction so it can be followed through the logs
-    @TestVisible private final static String GUID = generateGUID();
+    @TestVisible private final static String GUID = UUID.randomUUID().toString();
 
     // Parameter names
     @TestVisible private final static String PARAM_NAME_STATE = 'state';
+    
+    // Test Cookie header
+    @TestVisible private final static String TEST_COOKIE_HEADER = 'sid=[SESSION_ID];';
 
     // Valid algorithm for JKS Header and JWT Signing Certificate for validating the user inputs based on availible SFDC functionality
     @TestVisible private final static Set<String> VALID_JWS_HEADER_ALGORITHMS  = new Set<String>{'RS256','RS384','RS512','ES256','ES384','ES512'};
@@ -126,19 +148,46 @@ public with sharing class OAuthJwtClientCredentials extends Auth.AuthProviderPlu
      *              just ignore this value or put in a random, invalid value.
      */
     public Auth.AuthProviderTokenResponse handleCallback(Map<String,String> authProviderConfiguration, Auth.AuthProviderCallbackState callbackState){
-        
-        // Retrieve a new token from the token endpoint
-        TokenResponse tokenResponse;
+       try{
+            // Check if the "per user" principal is enabled and if so set the logged in user Id
+            if(Boolean.valueOf(authProviderConfiguration.get(ENABLE_PER_USER_MODE_FIELD_NAME))){
+                this.setLoggedInUserDetails(callbackState);
+            }
 
-        try{
             // Retrieve a new token from the token endpoint
-            tokenResponse = this.retrieveToken(authProviderConfiguration);
+            TokenResponse tokenResponse = this.retrieveToken(authProviderConfiguration);
+
+            // Manage the login history
+            this.handleInsertHistoryRecord(
+                authProviderConfiguration,
+                'Initial',
+                String.isNotBlank(tokenResponse.access_token),
+                'JWT_CLIENT_CREDENTIALS',
+                this.tokenCallout
+            );
+
+            // Check if the per user principal is enabled, if so update the log entry for that user mapping
+            if( Boolean.valueOf(authProviderConfiguration.get(ENABLE_PER_USER_MODE_FIELD_NAME)) &&
+                Boolean.valueOf(authProviderConfiguration.get(ENABLE_LOGIN_LOGGING_FIELD_NAME))){
+                
+                // Update the mapping record    
+                getAuthProviderUtil().call('updateMappingLoginDetails', new Map<String, Object> { 
+                    'authProviderName' => authProviderConfiguration.get(AUTH_PROVIDER_NAME_FIELD_NAME)?.trim(),
+                    'userId'           => loggedInUserId
+                });
+            }
+
+            // Error with the token, purposely thrown here to manage proper error logging
+            if(String.isBlank(tokenResponse.access_token)){
+                throw new TokenException(String.format(INVALID_TOKEN_RESPONSE_MSG, new String[]{tokenCallout.getResponse().getBody()}));
+            }
+
 
             // Return the the token response, there is no refresh token so we just set a random value
             return new Auth.AuthProviderTokenResponse(
                 authProviderConfiguration.get(AUTH_PROVIDER_NAME_FIELD_NAME)?.trim(),
                 tokenResponse.access_token,
-                'NoRefreshTokenInThisOAuthFlow',
+                loggedInUserId,
                 callbackState.queryParameters.get(PARAM_NAME_STATE)
             ); 
         }catch(Exception e){
@@ -162,13 +211,44 @@ public with sharing class OAuthJwtClientCredentials extends Auth.AuthProviderPlu
      */
     public override Auth.OAuthRefreshResult refresh(Map<String,String> authProviderConfiguration, String refreshToken){
         try{
+            // Check if the "per user" principal is enabled and if so set the logged in user Id
+            // This way the correct user is
+            if(Boolean.valueOf(authProviderConfiguration.get(ENABLE_PER_USER_MODE_FIELD_NAME))){
+                loggedInUserId = refreshToken;
+            }
+
             // Retrieve a new token from the token endpoint
-            TokenResponse response = this.retrieveToken(authProviderConfiguration);
+            TokenResponse tokenResponse = this.retrieveToken(authProviderConfiguration);
             
+            // Manage the login history
+            this.handleInsertHistoryRecord(
+                authProviderConfiguration,
+                'Refresh',
+                String.isNotBlank(tokenResponse.access_token),
+                'JWT_CLIENT_CREDENTIALS',
+                this.tokenCallout
+            );
+            
+            // Check if the per user principal is enabled, if so update the log entry for that user mapping
+            if( Boolean.valueOf(authProviderConfiguration.get(ENABLE_PER_USER_MODE_FIELD_NAME)) &&
+                Boolean.valueOf(authProviderConfiguration.get(ENABLE_LOGIN_LOGGING_FIELD_NAME))){
+                
+                // Update the mapping record    
+                getAuthProviderUtil().call('updateMappingLoginDetails', new Map<String, Object> { 
+                    'authProviderName' => authProviderConfiguration.get(AUTH_PROVIDER_NAME_FIELD_NAME)?.trim(),
+                    'userId'           => loggedInUserId
+                });
+            }
+
+            // Error with the token, purposely thrown here to manage proper error logging
+            if(String.isBlank(tokenResponse.access_token)){
+                throw new TokenException(String.format(INVALID_TOKEN_RESPONSE_MSG, new String[]{this.tokenCallout.getResponse().getBody()}));
+            }
+
             // Return the (refresh) token response
             return new Auth.OAuthRefreshResult(
-                response.access_token,
-                response.token_type
+                tokenResponse.access_token,
+                refreshToken
             );
         }catch(Exception e){
             handleException(e, authProviderConfiguration);
@@ -195,19 +275,7 @@ public with sharing class OAuthJwtClientCredentials extends Auth.AuthProviderPlu
      *              integration user.
      */
     public Auth.UserData getUserInfo(Map<string,string> authProviderConfiguration, Auth.AuthProviderTokenResponse response) {
-        return new Auth.UserData(
-            'IntegrationUserId',// User Id
-            'Integration',      // First Name
-            'User',             // Last Name
-            'Integration User', // Full Name
-            'integration.user@example.com.invalid', // Email Address
-            'link',             // Link
-            null,               // Username
-            null,               // Locale
-            null,               // Provider
-            null,               // Site login
-            null                // Attribute map
-        );
+        return this.loggedInUserData;
     }
 
 
@@ -259,41 +327,6 @@ public with sharing class OAuthJwtClientCredentials extends Auth.AuthProviderPlu
     }
 
 
-    /**
-     * @description Method to generate an HttpRequest object that can be used to retrieve the token.
-     * @param       authProviderConfiguration The configuration items for the custom authentication
-     *                                        provider that have been configured in the custom metadata
-     *                                        type.
-     * @param       body                      The request body content
-     * @return      HttpRequest to fetch the token
-     * @note        This method has been split for testability reasons: Not all data could be accessed
-     *              otherwise.
-     */
-    @TestVisible
-    private HttpRequest generateHttpRequest(Map<String,String> authProviderConfiguration, String body){
-        
-        // Create the request to the token endpoint
-        HttpRequest httpRequest = new HttpRequest(); 
-        httpRequest.setEndpoint(authProviderConfiguration.get(TOKEN_ENDPOINT_FIELD_NAME)?.trim()); 
-        httpRequest.setHeader('Content-Type','application/x-www-form-urlencoded'); 
-        httpRequest.setMethod('POST'); 
-        httpRequest.setBody(body);
-        
-        // Add optional custom headers to the token request (i.e. things like API keys,  X-Correlation-Id etc.)
-        this.addStringHeadersToRequest(
-            authProviderConfiguration.get(TOKEN_HEADERS_FIELD_NAME)?.trim(),
-            httpRequest
-        );
-
-        // Add optional custom parameters to the token request (i.e. things client_id , tentant etc.)
-        this.addStringParametersToRequest(
-            authProviderConfiguration.get(TOKEN_PARAMS_FIELD_NAME)?.trim(),
-            httpRequest
-        );
-        
-        // Return the request ready for sending
-        return httpRequest;
-    }
 
 
     /**
@@ -307,45 +340,36 @@ public with sharing class OAuthJwtClientCredentials extends Auth.AuthProviderPlu
      */
     private TokenResponse retrieveToken(Map<String,String> authProviderConfiguration){
         
+        // Call SF token endpoint
+        this.tokenCallout = new utl.Rst();
+
         // Generate the full body string as a URL query parameter
-        String body =  this.urlParameterQueryString(new Map<String,String>{
+        Map<String,String> bodyParameters = new Map<String,String>{
             'grant_type'            => 'client_credentials',
             'client_assertion_type' => 'urn:ietf:params:oauth:client-assertion-type:jwt-bearer',
             'client_assertion'      => this.generateJWS(authProviderConfiguration),
             'scope'                 => authProviderConfiguration.get(SCOPE_FIELD_NAME)?.trim()
-        });
+        };
+        
+        // Add optional custom headers to the token request (i.e. things like API keys,  X-Correlation-Id etc.)
+        this.addStringHeadersToRequest(
+            authProviderConfiguration.get(TOKEN_HEADERS_FIELD_NAME)?.trim(),
+            this.tokenCallout
+        );
 
-        // Send thefetch the response
-        HttpResponse httpResponse = new Http().send(
-            this.generateHttpRequest(
-                authProviderConfiguration,
-                body
-            )
-        ); 
+        // Add optional custom parameters to the token request (i.e. things client_id , tentant etc.)
+        this.addStringParametersToRequest(
+            authProviderConfiguration.get(TOKEN_PARAMS_FIELD_NAME)?.trim(),
+            bodyParameters
+        );
 
-        // Check the status is as expexted or throw an exception
-        if(httpResponse.getStatusCode() != 200){
-            
-            // Throw an exception
-            throw new TokenException(String.format(
-                INVALID_TOKEN_RESPONSE_MSG,
-                new String[]{httpResponse.getBody()}
-            ));
-        }
-
-        // Check if the per user principal is enabled, if so update the log entry for that user mapping
-        if( Boolean.valueOf(authProviderConfiguration.get(ENABLE_PER_USER_MODE_FIELD_NAME)) &&
-            Boolean.valueOf(authProviderConfiguration.get(ENABLE_LOGIN_LOGGING_FIELD_NAME))){
-            
-            // Update the mapping record    
-            getAuthProviderUtil().call('updateMappingLoginDetails', new Map<String, Object> { 
-                'authProviderName' => authProviderConfiguration.get(AUTH_PROVIDER_NAME_FIELD_NAME)?.trim(),
-                'userId'           => UserInfo.getUserId()
-            });
-        }
-
+        // Configure and call the endpoint
+        this.tokenCallout.setEndpoint(authProviderConfiguration.get(MY_DOMAIN_FIELD_NAME) + '/services/oauth2/token');
+        this.tokenCallout.setContentTypeHeaderToFormUrlEncoded(bodyParameters);
+        this.tokenCallout.call();
+        
         // Parse the response into a token response
-        return this.parseTokenResponse(httpResponse.getBody());
+        return this.parseTokenResponse(this.tokenCallout.getResponse().getBody());
     }
 
 
@@ -415,25 +439,6 @@ public with sharing class OAuthJwtClientCredentials extends Auth.AuthProviderPlu
         return EncodingUtil.base64Encode(input).replace('+', '-').replace('/', '_');
     }
 
-    
-    /**
-     * @description Very basic GUID implementation that you should probably replace this with your own
-     *              implementation if you deem it necessary.
-     *              These GUIDs are used to populate the "jti" parameter in the JWT to prevent replay
-     *              attacks.
-     * @return      V4 UUID (GUID)
-     */
-    private static String generateGUID(){
-        String randomHexString = EncodingUtil.convertToHex(Crypto.generateAESKey(256));
-        return String.join(new String[]{
-            randomHexString.substring(0,8),
-            randomHexString.substring(8,12),
-            randomHexString.substring(12,16),
-            randomHexString.substring(16,20),
-            randomHexString.substring(20,32)
-        },'-');
-    }
-
 
     /**
      * @description Methods to add headers from a comma separated key/value pair string to an HttpRequest Object.
@@ -444,7 +449,7 @@ public with sharing class OAuthJwtClientCredentials extends Auth.AuthProviderPlu
      * @param       headerValue The comma separated key/value pairs of headers to add
      * @param       httpRequest The HttpRequest object to add the header values to
      */
-    private void addStringHeadersToRequest(String headerValue, HttpRequest httpRequest){
+    private void addStringHeadersToRequest(String headerValue, utl.Rst callout){
         
         // Validate the header has a value
         if(String.isBlank(headerValue)){
@@ -462,7 +467,7 @@ public with sharing class OAuthJwtClientCredentials extends Auth.AuthProviderPlu
                 
                 // Validate the header is correct and has a 
                 if(keyValueList.size() == 2){
-                    httpRequest.setHeader(keyValueList[0]?.trim(), keyValueList[1]?.trim());
+                    callout.addHeader(keyValueList[0]?.trim(), keyValueList[1]?.trim());
                 }
             }
         }
@@ -478,22 +483,18 @@ public with sharing class OAuthJwtClientCredentials extends Auth.AuthProviderPlu
      *                             client_id : [CLIENT_ID], tenant : abcde
      * @param       httpRequest    The HttpRequest object to add the parameter values to
      */
-    private void addStringParametersToRequest(String parameterValue, HttpRequest httpRequest){
+    private void addStringParametersToRequest(String parameterValue, Map<String,String> parameterMap){
         
         // Validate the parameter has a value
         if(String.isBlank(parameterValue)){
             return;
         }
 
-        // Create a map to hold the parameters
-        Map<String,String> parameterMap = new Map<String,String>();
-
         // Each header should be split by a comma, due to fact multi line is not supported
         for(String line : parameterValue.split(',')){
             
             // Check the line contains a colon but still has a value after the colon
             if(line.contains(':')){
-                
                 // Split the value in key value pair
                 String[] keyValueList = line.split(':');
                 
@@ -502,11 +503,6 @@ public with sharing class OAuthJwtClientCredentials extends Auth.AuthProviderPlu
                     parameterMap.put(keyValueList[0]?.trim(), keyValueList[1]?.trim());
                 }
             }
-        }
-
-        // Add the parameters to the string
-        if(!parameterMap.isEmpty()){
-            httpRequest.setBody(httpRequest.getBody() + '&' + this.urlParameterQueryString(parameterMap));
         }
     }
 
@@ -542,41 +538,6 @@ public with sharing class OAuthJwtClientCredentials extends Auth.AuthProviderPlu
             }
         }
         throw new JwsException(JWS_INVALID_SIGN_ALG_EXCEPTION_MSG);
-    }
-
-
-    /**
-     * @description Method to convert a key/value map into a URL encoded parameter query string that
-     *              can be used with url-encoded forms or get queries
-     * @param       parameterValueMap A key/value map that contains the parameter name and the
-     *                                parameter value
-     * @return      a url encoded parameter string formatted like "?key1=value1&key2=value2"
-     */
-    private String urlParameterQueryString(Map<String,String> parameterValueMap){
-        
-        // Return an emtpy string if the input is null
-        if(parameterValueMap == null || parameterValueMap.isEmpty()){
-            return '';
-        }
-
-        // Start the query string
-        String queryString ='';
-
-        // Parameter string format
-        final String parameterTemplate = '{0}{1}={2}';
-
-        // Add parameter if the parameter has a value
-        for(String parameter : parameterValueMap.keySet()){
-            if(String.isNotBlank(parameterValueMap.get(parameter))){
-                queryString += String.format(parameterTemplate, new String[]{
-                    ((String.isBlank(queryString)) ? '' : '&'),
-                    parameter,
-                    EncodingUtil.urlEncode(parameterValueMap.get(parameter), 'UTF-8')
-                });
-            }
-        }
-        // Return the query string
-        return queryString;
     }
 
 
@@ -655,6 +616,22 @@ public with sharing class OAuthJwtClientCredentials extends Auth.AuthProviderPlu
 
     
     /**
+     * @description Method to set the user id for the logged in user
+     * @param  callbackState The callback state containing the the cookie headers
+     */
+    @TestVisible
+    private void setLoggedInUserDetails(Auth.AuthProviderCallbackState callbackState){
+     
+        // Get the data for the  logged in user based on the cookie header
+        loggedInUserData = (Auth.UserData) getAuthProviderUtil().call('getAuthUserDataFromCookieHeader', new Map<String, Object> { 
+            'cookieHeader' => (!Test.IsRunningTest()) ? callbackState.headers.get('Cookie') : TEST_COOKIE_HEADER
+        });
+        // Extract the user Id for ease of use later
+        loggedInUserId = loggedInUserData.identifier;
+    }
+
+
+    /**
      * @description Method to get an instance of the AuthProviderUtil class.
      *              This option requires the "Lightweight - Auth Provider Util v2" (04t4K000002Jv1tQAC)
      *              package to be installed
@@ -677,6 +654,34 @@ public with sharing class OAuthJwtClientCredentials extends Auth.AuthProviderPlu
             }
         }
         return authProviderUtil;
+    }
+
+    /**
+     * @description Method that generates the JWT, JWS and HTTP Request to retrieve an access token
+     *              from the configured token endpoint.
+     * @param       authProviderConfiguration The configuration items for the custom authentication
+     *                                        provider that have been configured in the custom metadata
+     *                                        type.
+     * @param       flowType                  The type of login flow (Initial or Refresh)
+     * @param       success                   Inidcator if the login was successful or not
+     * @param       providerType              Optional description of the provider. This is handy when you
+     *                                        have chained callouts.
+     * @param       callout                   The callout details for error logging
+     */
+    @SuppressWarnings('PMD.ExcessiveParameterList')
+    private void handleInsertHistoryRecord(Map<String,String> authProviderConfiguration, String flowType, Boolean success, String providerType, utl.Rst callout){
+        // If login history is enabled, create a login history entry
+        if(Boolean.valueOf(authProviderConfiguration.get(ENABLE_LOGIN_HISTORY_FIELD_NAME))){
+            getAuthProviderUtil().call('insertLoginHistoryRecord', new Map<String, Object> { 
+                'authProviderName' => authProviderConfiguration.get(AUTH_PROVIDER_NAME_FIELD_NAME)?.trim(),
+                'userId'           => loggedInUserId,
+                'flowType'         => flowType,
+                'timestamp'        => Datetime.now(),
+                'success'          => success,
+                'providerType'     => providerType,
+                'loginInfo'        => success ? null : callout?.getResponse()?.getBody()
+            });
+        }
     }
 
 

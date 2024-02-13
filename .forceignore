@@ -17,8 +17,8 @@ package.xml
 **/profiles/**
 
 
-**/authproviders/**
-**/externalCredentials/**
-**/namedCredentials/**
-**/remoteSiteSettings/**
-**/customMetadata/**
+#**/authproviders/**
+#**/externalCredentials/**
+#**/namedCredentials/**
+#**/remoteSiteSettings/**
+#**/customMetadata/**

@@ -13,30 +13,39 @@ A reason to keep using this Auth Provider is you need a **Per User principal** b
 https://medium.com/@justusvandenberg/oauth-2-0-jwt-client-credentials-authentication-auth-d269835baae2
 
 ## Dependency - Package Info
-The following package need to be installed first before installing this package.
+The following package need to be installed first before installing this package. (In this order)
 If you use the *managed package* you need to installed the managed package dependency and if you use the *unlocked version* you need to use the unlocked dependency.
 | Info | Value |
 |---|---|
 |Name|Lightweight - Apex Unit Test Util v2|
-|Version|2.1.0-2|
-|Managed Installation URL | */packaging/installPackage.apexp?p0=04tP30000006pflIAA*
-|Unlocked Installation URL| */packaging/installPackage.apexp?p0=04tP30000006pUUIAY*
-
-## Package Info
-| Package Info | Value |
-|---|---|
-|Name|Lightweight - OAuth 2.0 JWT Client Credentials Auth Provider|
-|Version|0.4.0-1|
-|Installation URL| */packaging/installPackage.apexp?p0=04tP3000000739FIAQ*
-|GIT URL|https://github.com/jfwberg/lightweight-oauth-jwt-client-credentials-auth-provider.git|
+|Version|2.4.0-1|
+|Managed Installation URL | */packaging/installPackage.apexp?p0=04tP3000000M6OXIA0* |
+|Unlocked Installation URL| */packaging/installPackage.apexp?p0=04tP3000000M6Q9IAK* |
+|Github URL | https://github.com/jfwberg/lightweight-apex-unit-test-util-v2         |
+| | |
+|Name|Lightweight - Apex REST Util|
+|Version|0.11.0-1|
+|Managed Installation URL | */packaging/installPackage.apexp?p0=04tP3000000M6gHIAS* |
+|Unlocked Installation URL| */packaging/installPackage.apexp?p0=04tP3000000M6htIAC* |
+|Github URL | https://github.com/jfwberg/lightweight-apex-rest-util                 |
 
 ## Optional Dependencies
-This package has an extension that adds a basic (error) logging functionality and a user mapping utility that allows the Auth Provider to work in a user context using "Per User" instead of "Named Principal". 
+This package has an extension that adds a basic (error) logging functionality and a user mapping utility that allows the Auth Provider to work in a user context using "Per User" instead of "Named Principal".
+| Info | Value |
+|---|---|
+|Name|Lightweight - Auth Provider Util v2|
+|Version|0.12.0-1|
+|Managed Installation URL | */packaging/installPackage.apexp?p0=04tP3000000MVUzIAO*   |
+|Unlocked Installation URL| */packaging/installPackage.apexp?p0=04tP3000000MW1FIAW*   |
+|GIT URL                  | https://github.com/jfwberg/lightweight-auth-provider-util |
 
-| Installation Order | Package Name | Package Version | Installation URL | GIT Url |
-|---|---|---|---|---|
-| 1 | Lightweight - Auth Provider Util v2 | 0.4.0.LATEST | /packaging/installPackage.apexp?p0=04tP30000006yO5IAI | https://github.com/jfwberg/lightweight-auth-provider-util.git |
- 
+## Package info
+| Info | Value |
+|---|---|
+|Name|Lightweight - OAuth JWT Client Credentials Auth Provider|
+|Version|0.5.0-1|
+|Managed Installation URL | */packaging/installPackage.apexp?p0=04tP3000000MWfZIAW* |
+|Unlocked Installation URL| */packaging/installPackage.apexp?p0=04tP3000000MWndIAG* |
 
 ## Important
 - Security is no easy subject: Before implementing this (or any) solution, always validate what you're doing with a certified sercurity expert and your certified implementation partner
@@ -48,10 +57,20 @@ This package has an extension that adds a basic (error) logging functionality an
 - The public key needs te be shared with the authorisation server and setup according to their standards, usually a JWKS
 - You'll need all the authorization server details that are required to setup the connection
 
+## Assign permissions to Automated Process User
+Since the Spring 24 release platform events started running as the Automated Process User. Making the logging fail due to access issue.
+To fix this I created a specific permission set for this user that can be assigned using the code below.
+```java
+insert new PermissionSetAssignment(
+    AssigneeId      = [SELECT Id FROM User          WHERE alias = 'autoproc']?.Id,
+    PermissionSetId = [SELECT Id FROM PermissionSet WHERE Name  = 'Lightweight_Auth_Provider_Util_AutoProc']?.Id
+);
+```
+
 ## 00 :: Deployment and Preparation
 1. Import the JWT signing certificate into Salesforce, Note down the *Certificate API Name*
 2. Deploy the *Apex class* and the *Custom Metadata (including layouts)* from this SFDX Pproject to your Org (Or install the package)
-3. The package can be found here: *https://[MY_DOMAIN_URL]/packaging/installPackage.apexp?p0=04t4K000002Juz4QAC*
+3. The package can be found here: *https://[MY_DOMAIN_URL]/packaging/installPackage.apexp?p0=*
 
 ## 01 :: Setup the Auth. Provider
 In my example I am going to connect an api called "PiMoria"; this my test domain that I will use throughout this example.

@@ -4,13 +4,32 @@
       "path": "force-app/package",
       "default": true,
       "package": "Lightweight - OAuth 2.0 JWT Client Credentials Auth Provider",
-      "versionName": "Version 59.0 - 0.1",
-      "versionNumber": "0.4.0.NEXT",
+      "versionName": "Version 60.0 - 0.5",
+      "versionNumber": "0.5.0.NEXT",
       "versionDescription": "A lightweight generic Auth Provider Apex class that can be used with named/external credentials to get an access token using the OAuth 2.0 JWT Client Credentials Authentication Flow.",
-      "ancestorVersion": "0.3.0",
+      "ancestorVersion": "0.4.0",
       "dependencies": [
         {
-          "package": "Lightweight - Apex Unit Test Util v2@2.1.0-2"
+          "package": "Lightweight - Apex Unit Test Util v2@2.4.0-1"
+        },
+        {
+          "package": "Lightweight - REST Util@0.11.0-1"
+        }
+      ]
+    },
+    {
+      "path": "force-app/package",
+      "default": false,
+      "package": "Lightweight - OAuth 2.0 JWT Client Credentials Auth Provider (Unlocked)",
+      "versionName": "Version 60.0 - 0.5",
+      "versionNumber": "0.5.0.NEXT",
+      "versionDescription": "A lightweight generic Auth Provider Apex class that can be used with named/external credentials to get an access token using the OAuth 2.0 JWT Client Credentials Authentication Flow.",
+      "dependencies": [
+        {
+          "package": "Lightweight - Apex Unit Test Util v2 (Unlocked)@2.4.0-1"
+        },
+        {
+          "package": "Lightweight - REST Util (Unlocked)@0.11.0-1"
         }
       ]
     },
@@ -26,15 +45,20 @@
   "name": "lightweight-oauth-jwt-client-credentials-auth-provider",
   "namespace": "lwt",
   "sfdcLoginUrl": "https://login.salesforce.com",
-  "sourceApiVersion": "59.0",
+  "sourceApiVersion": "60.0",
   "packageAliases": {
-    "Lightweight - Apex Unit Test Util v2@2.1.0-2": "04tP30000006pflIAA",
-    "Lightweight - Apex Unit Test Util v2 (Unlocked)@2.1.0-2": "04tP30000006pUUIAY",
+    "Lightweight - Apex Unit Test Util v2@2.4.0-1": "04tP3000000M6OXIA0",
+    "Lightweight - Apex Unit Test Util v2 (Unlocked)@2.4.0-1": "04tP3000000M6Q9IAK",
+    "Lightweight - REST Util@0.11.0-1": "04tP3000000M6gHIAS",
+    "Lightweight - REST Util (Unlocked)@0.11.0-1": "04tP3000000M6htIAC",
     "Lightweight - OAuth 2.0 JWT Client Credentials Auth Provider": "0Ho4K0000008OYeSAM",
     "Lightweight - OAuth 2.0 JWT Client Credentials Auth Provider@0.1.0-1": "04t4K000002JuypQAC",
     "Lightweight - OAuth 2.0 JWT Client Credentials Auth Provider@0.1.0-2": "04t4K000002JuyuQAC",
     "Lightweight - OAuth 2.0 JWT Client Credentials Auth Provider@0.2.0-1": "04t4K000002Juz4QAC",
     "Lightweight - OAuth 2.0 JWT Client Credentials Auth Provider@0.3.0-1": "04t4K000002Jv1yQAC",
-    "Lightweight - OAuth 2.0 JWT Client Credentials Auth Provider@0.4.0-1": "04tP3000000739FIAQ"
+    "Lightweight - OAuth 2.0 JWT Client Credentials Auth Provider@0.4.0-1": "04tP3000000739FIAQ",
+    "Lightweight - OAuth 2.0 JWT Client Credentials Auth Provider (Unlocked)": "0HoP300000000ODKAY",
+    "Lightweight - OAuth 2.0 JWT Client Credentials Auth Provider@0.5.0-1": "04tP3000000MWfZIAW",
+    "Lightweight - OAuth 2.0 JWT Client Credentials Auth Provider (Unlocked)@0.5.0-1": "04tP3000000MWndIAG"
   }
 }

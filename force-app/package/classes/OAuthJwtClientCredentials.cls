@@ -1,7 +1,7 @@
 /**
  * @author         Justus van den Berg (jfwberg@gmail.com)
  * @date           April 2023
- * @copyright      (c) 2023 Justus van den Berg
+ * @copyright      (c) 2024 Justus van den Berg
  * @license        MIT (See LICENSE file in the project root)
  * @description    OAuth 2.0 JWT Client Authentication Auth Provider for the use with Client Credentials
  *                 Follows the standard as described in rfc7523Section 2.2
@@ -30,6 +30,7 @@ public with sharing class OAuthJwtClientCredentials extends Auth.AuthProviderPlu
      **                                          PRIVATE VARIABLES                                           **
      ** **************************************************************************************************** **/
     // For debugging purposes extract the callout data
+    @TestVisible
     private utl.Rst tokenCallout;
 
     // The optional auth provider util for error logging and per user principal (requires the "Lightweight - Auth Provider Util v2" package)
@@ -83,6 +84,7 @@ public with sharing class OAuthJwtClientCredentials extends Auth.AuthProviderPlu
     @TestVisible private final static String ENABLE_PER_USER_MODE_FIELD_NAME = String.valueOf(OAuth_JWT_Client_Authentication__mdt.Enable_Per_User_Mode__c);
     @TestVisible private final static String ENABLE_ERROR_LOGGING_FIELD_NAME = String.valueOf(OAuth_JWT_Client_Authentication__mdt.Enable_Error_Logging__c);
     @TestVisible private final static String ENABLE_LOGIN_LOGGING_FIELD_NAME = String.valueOf(OAuth_JWT_Client_Authentication__mdt.Enable_Per_User_Login_Logging__c);
+    @TestVisible private final static String ENABLE_LOGIN_HISTORY_FIELD_NAME = String.valueOf(OAuth_JWT_Client_Authentication__mdt.Enable_Login_History__c);
 
     // This will generate the GUID that is used to identify this specific transaction so it can be followed through the logs
     @TestVisible private final static String GUID = UUID.randomUUID().toString();
@@ -92,6 +94,8 @@ public with sharing class OAuthJwtClientCredentials extends Auth.AuthProviderPlu
     
     // Test Cookie header
     @TestVisible private final static String TEST_COOKIE_HEADER = 'sid=[SESSION_ID];';
+    @TestVisible private final static String TEST_ASSERTION     = '[TEST_ASSERTION]';
+    
 
     // Valid algorithm for JKS Header and JWT Signing Certificate for validating the user inputs based on availible SFDC functionality
     @TestVisible private final static Set<String> VALID_JWS_HEADER_ALGORITHMS  = new Set<String>{'RS256','RS384','RS512','ES256','ES384','ES512'};
@@ -165,6 +169,7 @@ public with sharing class OAuthJwtClientCredentials extends Auth.AuthProviderPlu
                 'JWT_CLIENT_CREDENTIALS',
                 this.tokenCallout
             );
+            
 
             // Check if the per user principal is enabled, if so update the log entry for that user mapping
             if( Boolean.valueOf(authProviderConfiguration.get(ENABLE_PER_USER_MODE_FIELD_NAME)) &&
@@ -228,6 +233,7 @@ public with sharing class OAuthJwtClientCredentials extends Auth.AuthProviderPlu
                 'JWT_CLIENT_CREDENTIALS',
                 this.tokenCallout
             );
+            
             
             // Check if the per user principal is enabled, if so update the log entry for that user mapping
             if( Boolean.valueOf(authProviderConfiguration.get(ENABLE_PER_USER_MODE_FIELD_NAME)) &&
@@ -338,6 +344,7 @@ public with sharing class OAuthJwtClientCredentials extends Auth.AuthProviderPlu
      * @return      A TokenResponse with the access token
      * @throws      TokenException            There is an error in parsing the token response
      */
+    @TestVisible
     private TokenResponse retrieveToken(Map<String,String> authProviderConfiguration){
         
         // Call SF token endpoint
@@ -347,7 +354,7 @@ public with sharing class OAuthJwtClientCredentials extends Auth.AuthProviderPlu
         Map<String,String> bodyParameters = new Map<String,String>{
             'grant_type'            => 'client_credentials',
             'client_assertion_type' => 'urn:ietf:params:oauth:client-assertion-type:jwt-bearer',
-            'client_assertion'      => this.generateJWS(authProviderConfiguration),
+            'client_assertion'      => (Test.isRunningTest()) ? TEST_ASSERTION : this.generateJWS(authProviderConfiguration),
             'scope'                 => authProviderConfiguration.get(SCOPE_FIELD_NAME)?.trim()
         };
         
@@ -364,7 +371,7 @@ public with sharing class OAuthJwtClientCredentials extends Auth.AuthProviderPlu
         );
 
         // Configure and call the endpoint
-        this.tokenCallout.setEndpoint(authProviderConfiguration.get(MY_DOMAIN_FIELD_NAME) + '/services/oauth2/token');
+        this.tokenCallout.setEndpoint(authProviderConfiguration.get(TOKEN_ENDPOINT_FIELD_NAME));
         this.tokenCallout.setContentTypeHeaderToFormUrlEncoded(bodyParameters);
         this.tokenCallout.call();
         
@@ -383,6 +390,7 @@ public with sharing class OAuthJwtClientCredentials extends Auth.AuthProviderPlu
      *                                        type.
      * @return      JWS Compact Serialized, generated from the configuration
      */
+    @TestVisible
     private String generateJWS(Map<String,String> authProviderConfiguration){
         
         // Create the JWK header
@@ -467,7 +475,7 @@ public with sharing class OAuthJwtClientCredentials extends Auth.AuthProviderPlu
                 
                 // Validate the header is correct and has a 
                 if(keyValueList.size() == 2){
-                    callout.addHeader(keyValueList[0]?.trim(), keyValueList[1]?.trim());
+                    callout.setHeader(keyValueList[0]?.trim(), keyValueList[1]?.trim());
                 }
             }
         }
@@ -560,7 +568,6 @@ public with sharing class OAuthJwtClientCredentials extends Auth.AuthProviderPlu
         // This does mean a dependency with a different package, simply remove this code if you don't
         // want to install the dependency      
         if(Boolean.valueOf(authProviderConfiguration.get(ENABLE_ERROR_LOGGING_FIELD_NAME))){
-            
             getAuthProviderUtil().call('insertLog', new Map<String, Object> { 
                 'authProviderName' => authProviderConfiguration.get(AUTH_PROVIDER_NAME_FIELD_NAME)?.trim(),
                 'userId'           => UserInfo.getUserId(),
@@ -640,16 +647,21 @@ public with sharing class OAuthJwtClientCredentials extends Auth.AuthProviderPlu
      */
     @TestVisible
     private static Callable getAuthProviderUtil(){
+
+        // Implementation in your normal code to return the Mock callable during an Apex Unit Test
+        if(Test.isRunningTest()){
+            return (Callable) utl.Clbl.getInstance();
+        }
         
         // Lazy loading
         if(authProviderUtil == null){
             
             // Dymaically instatiate class 
-            authProviderUtil = (Callable) Type.forName('lwt.AuthProviderUtil')?.newInstance();
+            authProviderUtil = (Callable) Type.forName('lwt','AuthProviderUtil')?.newInstance();
             
             // Throw an error if the package is not installed
             // Add Test check here so the test does not fail in case the package is installed
-            if(authProviderUtil == null || Test.isRunningTest()){
+            if(authProviderUtil == null){
                 throw new GenericException(MISSING_UTIL_PACKAGE_MSG);
             }
         }
@@ -672,6 +684,9 @@ public with sharing class OAuthJwtClientCredentials extends Auth.AuthProviderPlu
     private void handleInsertHistoryRecord(Map<String,String> authProviderConfiguration, String flowType, Boolean success, String providerType, utl.Rst callout){
         // If login history is enabled, create a login history entry
         if(Boolean.valueOf(authProviderConfiguration.get(ENABLE_LOGIN_HISTORY_FIELD_NAME))){
+            
+            System.debug('INSERTING history as ' + UserInfo.getUserName() + ' - '+ UserInfo.getLastName());
+
             getAuthProviderUtil().call('insertLoginHistoryRecord', new Map<String, Object> { 
                 'authProviderName' => authProviderConfiguration.get(AUTH_PROVIDER_NAME_FIELD_NAME)?.trim(),
                 'userId'           => loggedInUserId,

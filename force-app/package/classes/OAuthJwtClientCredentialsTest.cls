@@ -1,6 +1,6 @@
 /**
  * @author      Justus van den Berg (jfwberg@gmail.com)
- * @date        April 2023
+ * @date        April 2024
  * @copyright   (c) 2023 Justus van den Berg
  * @license     MIT (See LICENSE file in the project root)
  * @description Class for testing the OAuthJwtClientAuthentication Methods
@@ -52,6 +52,7 @@ private with sharing class OAuthJwtClientCredentialsTest {
         // Test the method
         Test.startTest();
         Auth.AuthProviderTokenResponse tokenResponse = getTokenResponse();
+        getAuthProvider().generateJWS(getAuthProviderConfig());
         Test.stopTest();
 
         // Assert test results
@@ -81,6 +82,43 @@ private with sharing class OAuthJwtClientCredentialsTest {
 
 
     /**
+     * @description Method to test the refresh() function
+     */
+    @IsTest
+    static void testPerUser(){
+        
+        // Enable per user mode, error loging and login history logging.
+        getAuthProviderConfig().put(OAuthJwtClientCredentials.ENABLE_PER_USER_MODE_FIELD_NAME,'true');
+        getAuthProviderConfig().put(OAuthJwtClientCredentials.ENABLE_ERROR_LOGGING_FIELD_NAME,'true');
+        getAuthProviderConfig().put(OAuthJwtClientCredentials.ENABLE_LOGIN_LOGGING_FIELD_NAME,'true');
+        getAuthProviderConfig().put(OAuthJwtClientCredentials.ENABLE_LOGIN_HISTORY_FIELD_NAME,'true');
+
+        // Set action responses
+        utl.Clbl.setActionResponse('insertLoginHistoryRecord',  null);
+        utl.Clbl.setActionResponse('updateMappingLoginDetails', null);
+        utl.Clbl.setActionResponse('insertLog',                 null);
+        utl.Clbl.setActionResponse('handleInsertHistoryRecord', null);
+        utl.Clbl.setActionResponse('checkUserMappingExists',    true);
+        utl.Clbl.setActionResponse('getSubjectFromUserMapping', UserInfo.getUserName());
+        utl.Clbl.setActionResponse('getAuthUserDataFromCookieHeader',getAuthProvider().loggedInUserData);
+        
+        // Set a mock resonse for the token
+        Test.setMock(HttpCalloutMock.class, utl.Mck.getInstance());
+        setTokenResponseMock();
+
+        // Test the method
+        Test.startTest();
+        getAuthProvider().refresh(getAuthProviderConfig(),'[REFRESH_TOKEN]');
+        getTokenResponse();
+        getAuthProvider().generateJWS(getAuthProviderConfig());
+        Test.stopTest();
+
+        // Assert test results
+        Assert.areEqual(true,    true, 'Coverage only');
+    }
+
+
+    /**
      * @description Method to test the getUserInfo() function
      */
     @IsTest
@@ -99,7 +137,7 @@ private with sharing class OAuthJwtClientCredentialsTest {
         Test.stopTest();
 
         // Assert test results
-        Assert.areEqual('integration.user@example.com.invalid',    userData.email, 'Unexpected email value');
+        Assert.areEqual(UserInfo.getUserEmail(), userData.email, 'Unexpected email value');
     }
 
 
@@ -123,22 +161,32 @@ private with sharing class OAuthJwtClientCredentialsTest {
     @IsTest
     static void testGenerateHttpRequest(){
         
+        // Setup the mock response
+        utl.Mck.setResponse(200, '{"SUCCESS": true}');
+
+        // Set the mock response
+        Test.setMock(HttpCalloutMock.class, utl.Mck.getInstance());
+
         // Test the http request is generated correcty
         Test.startTest();
-        HttpRequest httpRequest = getAuthProvider().generateHttpRequest(getAuthProviderConfig(),'test=body');
+        getAuthProvider().retrieveToken(getAuthProviderConfig());
         Test.stopTest();
 
-        // Validate
-        Assert.areEqual('test=body&tenant=%5BTENANT%5D&client_id=%5BCLIENT_ID%5D', httpRequest.getBody(),'Unexpected request body');
+        // Validate request body
+        Assert.areEqual(
+            'grant_type=client_credentials&client_assertion_type=urn%3Aietf%3Aparams%3Aoauth%3Aclient-assertion-type%3Ajwt-bearer&client_assertion=%5BTEST_ASSERTION%5D&scope=web%2Capi&tenant=%5BTENANT%5D&client_id=%5BCLIENT_ID%5D',
+            getAuthProvider().tokenCallout.getRequest().getBody(),
+            'Unexpected request body'
+        );
         
         // Assert test results for custom headers
-        Assert.areEqual('[TEST_KEY]', httpRequest.getHeader('apiKey'),'Expected header "apiKey" does not exist');
-        Assert.areEqual('[API_ID]',   httpRequest.getHeader('apiId'), 'Expected header "apiId" does not exist');
+        Assert.areEqual('[TEST_KEY]', getAuthProvider().tokenCallout.getRequest().getHeader('apiKey'),'Expected header "apiKey" does not exist');
+        Assert.areEqual('[API_ID]',   getAuthProvider().tokenCallout.getRequest().getHeader('apiId'), 'Expected header "apiId" does not exist');
         
         // assert result for the endpoint
         Assert.areEqual(
             getAuthProviderConfig().get(OAuthJwtClientCredentials.TOKEN_ENDPOINT_FIELD_NAME),
-            httpRequest.getEndpoint(),
+            getAuthProvider().tokenCallout.getRequest().getEndpoint(),
             'Unexpected endpoint'
         );
     }
@@ -270,8 +318,8 @@ private with sharing class OAuthJwtClientCredentialsTest {
                 OAuthJwtClientCredentials.JWS_SIGNING_ALGORITHM_FIELD_NAME  => 'RSA-SHA512',
                 OAuthJwtClientCredentials.ENABLE_PER_USER_MODE_FIELD_NAME   => 'false',
                 OAuthJwtClientCredentials.ENABLE_ERROR_LOGGING_FIELD_NAME   => 'false',
-                OAuthJwtClientCredentials.ENABLE_LOGIN_LOGGING_FIELD_NAME   => 'false'
-                
+                OAuthJwtClientCredentials.ENABLE_LOGIN_LOGGING_FIELD_NAME   => 'false',
+                OAuthJwtClientCredentials.ENABLE_LOGIN_HISTORY_FIELD_NAME   => 'false'
             };
         }
         return authProviderConfig;

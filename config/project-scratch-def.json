@@ -1,6 +1,6 @@
 {
 	"orgName": "Lightweight - OAuth 2.0 JWT Client Credentials Auth Provider - Dev Scratch Org",
-	"edition": "Developer",
+	"edition": "Enterprise",
 	"features": [
 		"EnableSetPasswordInApi",
         "PersonAccounts",
